@@ -268,7 +268,18 @@ func take_damage(damage: float, damage_type: String = "physical"):
 		return
 
 	var actual_damage = calculate_damage(damage, damage_type)
+	var old_health = current_health
 	current_health -= actual_damage
+
+	# DEBUG: Show damage details
+	print("=== DAMAGE DEBUG ===")
+	print("Enemy: %s" % enemy_name)
+	print("Max Health: %.1f" % max_health)
+	print("Old Health: %.1f" % old_health)
+	print("Damage taken: %.1f" % actual_damage)
+	print("New Health: %.1f" % current_health)
+	print("Health %: %.1f%%" % ((current_health / max_health) * 100))
+	print("=== END DAMAGE DEBUG ===")
 
 	# Update health bar
 	health_bar.value = current_health
@@ -281,6 +292,7 @@ func take_damage(damage: float, damage_type: String = "physical"):
 	show_damage_number(actual_damage)
 
 	if current_health <= 0:
+		print("ENEMY DIED: %s (was at %.1f/%.1f HP)" % [enemy_name, old_health, max_health])
 		die()
 
 func calculate_damage(damage: float, damage_type: String) -> float:

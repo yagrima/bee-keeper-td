@@ -5,16 +5,18 @@ func _ready():
 	# Set Standard Enemy properties
 	enemy_name = "Worker Wasp"
 	enemy_type = EnemyType.STANDARD
-	max_health = 40.0
-	movement_speed = 60.0
+	
+	# Only set base values if not already scaled
+	if max_health == 50.0:  # Default Enemy value (not yet set by StandardEnemy)
+		max_health = 40.0
+	if movement_speed == 80.0:  # Default Enemy value
+		movement_speed = 60.0
+	if honey_reward == 5:  # Default Enemy value
+		honey_reward = 3
+	
 	armor = 0.0
 	magic_resistance = 0.0
-
-	# Rewards
-	honey_reward = 3
 	honeygem_reward = 0
-
-	# Special abilities
 	can_attack_towers = false
 
 	super._ready()

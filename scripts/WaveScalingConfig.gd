@@ -4,8 +4,8 @@ extends Resource
 # Wave Scaling Configuration for BeeKeeperTD
 # Simple configuration for enemy scaling across waves
 
-# Base scaling factor per wave (1.3 = 30% increase per wave)
-@export var base_scaling_factor: float = 1.3
+# Base scaling factor per wave (1.35 = 35% increase per wave)
+@export var base_scaling_factor: float = 1.35
 
 # Simple scaling configuration
 @export var health_scaling: float = 1.0      # Full health scaling
