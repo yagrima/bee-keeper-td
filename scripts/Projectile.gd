@@ -66,13 +66,19 @@ func setup_collision():
 	collision_shape.shape = rect_shape
 	collision_area.add_child(collision_shape)
 
+	# Set collision layers for projectile detection
+	collision_area.collision_layer = 4  # Projectile layer
+	collision_area.collision_mask = 2   # Detect enemy layer
+
 	collision_area.body_entered.connect(_on_collision_body_entered)
-	collision_area.area_entered.connect(_on_collision_area_entered)
+	collision_area.area_entered.connect(_on_collision_area_entered)  # Enemies are Area2D!
+
 
 func initialize(start_pos: Vector2, target_pos: Vector2, projectile_damage: float):
 	global_position = start_pos
 	damage = projectile_damage
 	start_position = start_pos
+	hits_remaining = penetration  # Reset hits based on current penetration
 
 	# Calculate initial velocity
 	var direction = start_pos.direction_to(target_pos)
@@ -130,8 +136,8 @@ func _on_collision_body_entered(body):
 	handle_collision(body)
 
 func _on_collision_area_entered(area):
-	var body = area.get_parent()
-	handle_collision(body)
+	# The enemy IS the Area2D, not its parent
+	handle_collision(area)
 
 func handle_collision(body):
 	if not body.has_method("take_damage"):
@@ -139,7 +145,6 @@ func handle_collision(body):
 
 	if body in has_hit_targets:
 		return  # Already hit this target
-
 	# Deal damage
 	body.take_damage(damage)
 	has_hit_targets.append(body)

@@ -1,32 +1,32 @@
-class_name BasicShooterTower
+class_name PiercingTower
 extends Tower
 
 # Projectile settings
 @export var projectile_scene: PackedScene
-@export var projectile_speed: float = 300.0
-@export var projectile_color: Color = Color.YELLOW
+@export var projectile_speed: float = 250.0
+@export var projectile_color: Color = Color.CYAN
 
 # Audio and effects
 var muzzle_flash: Node2D
 
 func _ready():
-	tower_name = "Basic Shooter"
+	tower_name = "Piercing Shooter"
 	tower_type = TowerType.OFFENSIVE
 	targeting_mode = TargetingMode.NEAREST
 
-	# Default stats for Basic Shooter
-	damage = 15.0
-	range = 120.0
-	attack_speed = 1.5
-	honey_cost = 25
-	upgrade_cost = 40
-	penetration = 1  # Standard bullets hit only one enemy
+	# Stats for Piercing Shooter - less damage but hits multiple enemies
+	damage = 10.0
+	range = 140.0
+	attack_speed = 1.2
+	honey_cost = 35
+	upgrade_cost = 50
+	penetration = 3  # Can hit up to 3 enemies
 
 	super._ready()
 	setup_shooter_visual()
 
 func setup_shooter_visual():
-	# Update the visual to look more like a shooter tower
+	# Update the visual to look more like a piercing tower
 	if visual:
 		# Clear default visual
 		for child in visual.get_children():
@@ -34,24 +34,24 @@ func setup_shooter_visual():
 
 		# Create tower base
 		var base = ColorRect.new()
-		base.size = Vector2(20, 20)
-		base.position = Vector2(-10, -10)
-		base.color = Color(0.4, 0.3, 0.2)  # Brown base
+		base.size = Vector2(22, 22)
+		base.position = Vector2(-11, -11)
+		base.color = Color(0.2, 0.4, 0.5)  # Blue-gray base
 		visual.add_child(base)
 
-		# Create turret/cannon
+		# Create longer barrel for piercing shots
 		var turret = ColorRect.new()
-		turret.size = Vector2(16, 6)
-		turret.position = Vector2(-8, -3)
-		turret.color = Color(0.6, 0.6, 0.6)  # Gray turret
+		turret.size = Vector2(20, 4)
+		turret.position = Vector2(-10, -2)
+		turret.color = Color(0.7, 0.8, 0.9)  # Light blue turret
 		visual.add_child(turret)
 
 		# Create muzzle flash (initially hidden)
 		muzzle_flash = Node2D.new()
 		var flash_rect = ColorRect.new()
-		flash_rect.size = Vector2(12, 4)
-		flash_rect.position = Vector2(8, -2)
-		flash_rect.color = Color.YELLOW
+		flash_rect.size = Vector2(14, 3)
+		flash_rect.position = Vector2(10, -1.5)
+		flash_rect.color = Color.CYAN
 		flash_rect.modulate.a = 0.0  # Start invisible
 		muzzle_flash.add_child(flash_rect)
 		visual.add_child(muzzle_flash)
@@ -60,7 +60,7 @@ func execute_attack():
 	if not current_target or not is_instance_valid(current_target):
 		return
 
-	print("BasicShooterTower executing attack on target: ", current_target.name)
+	print("PiercingTower executing attack on target: ", current_target.name)
 	fire_projectile()
 	show_muzzle_flash()
 
@@ -73,7 +73,7 @@ func fire_projectile():
 	var ui_canvas = td_scene.get_node("UI")
 	ui_canvas.add_child(projectile)
 
-	print("Projectile created and added to UI layer")
+	print("Piercing projectile created with penetration: ", penetration)
 
 	# Initialize projectile
 	var start_pos = attack_point.global_position
@@ -107,18 +107,19 @@ func _on_projectile_expired():
 	pass
 
 func get_tower_color() -> Color:
-	return Color(0.8, 0.4, 0.2)  # Orange-brown for shooter towers
+	return Color(0.2, 0.6, 0.8)  # Blue for piercing towers
 
 func upgrade():
 	super.upgrade()
-	# Additional upgrade effects for shooter
+	# Additional upgrade effects for piercing shooter
 	projectile_speed *= 1.1
+	penetration += 1  # Gain more penetration on upgrade
 
 	# Change visual based on level
 	if level == 2:
-		projectile_color = Color.ORANGE
+		projectile_color = Color.DEEP_SKY_BLUE
 	elif level == 3:
-		projectile_color = Color.RED
+		projectile_color = Color.BLUE
 	elif level >= 4:
 		projectile_color = Color.PURPLE
 
@@ -126,4 +127,5 @@ func get_tower_info() -> Dictionary:
 	var info = super.get_tower_info()
 	info["projectile_speed"] = projectile_speed
 	info["projectile_color"] = str(projectile_color)
+	info["penetration"] = penetration
 	return info

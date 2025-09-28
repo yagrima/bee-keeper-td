@@ -34,6 +34,12 @@ var available_towers: Dictionary = {
 		"script": "res://scripts/BasicShooterTower.gd",
 		"cost": 25,
 		"description": "A simple offensive tower that shoots projectiles"
+	},
+	"piercing_shooter": {
+		"name": "Piercing Shooter",
+		"script": "res://scripts/PiercingTower.gd",
+		"cost": 35,
+		"description": "Shoots piercing projectiles that can hit multiple enemies"
 	}
 }
 
@@ -85,6 +91,10 @@ func start_tower_placement(tower_type: String):
 	selected_tower_type = tower_type
 	current_mode = PlacementMode.PLACING_TOWER
 	create_placement_preview()
+
+	# Set cursor to cross for tower placement
+	Input.set_default_cursor_shape(Input.CURSOR_CROSS)
+
 	placement_mode_changed.emit(true)
 
 	print("Tower placement mode activated!")
@@ -159,29 +169,53 @@ func update_placement_preview(screen_pos: Vector2):
 	var ui_pos = grid_pos + map_offset
 	placement_preview.global_position = ui_pos
 
-	# Check if position is valid
-	var is_valid = is_valid_placement_position(grid_pos)
-	var preview_visual = placement_preview.get_child(0)
-	preview_visual.color = Color.GREEN if is_valid else Color.RED
+	# Check if position is valid and if we have enough honey
+	var is_valid_position = is_valid_placement_position(grid_pos)
+	var tower_data = available_towers[selected_tower_type]
+	var tower_cost = tower_data["cost"]
+	var current_honey = GameManager.get_resource("honey")
+	var has_enough_honey = current_honey >= tower_cost
 
-	print("Preview pos: UI=", ui_pos, " Map=", grid_pos, " Valid=", is_valid)
+	var preview_visual = placement_preview.get_child(0)
+
+	# Set color based on validity and honey availability
+	if is_valid_position and has_enough_honey:
+		preview_visual.color = Color.GREEN  # Can place
+	elif is_valid_position and not has_enough_honey:
+		preview_visual.color = Color.YELLOW  # Valid position but not enough honey
+	else:
+		preview_visual.color = Color.RED  # Invalid position
+
+	print("Preview pos: UI=", ui_pos, " Map=", grid_pos, " Valid=", is_valid_position, " Honey=", current_honey, "/", tower_cost)
 
 func snap_to_grid(pos: Vector2) -> Vector2:
-	var grid_x = round(pos.x / grid_size) * grid_size
-	var grid_y = round(pos.y / grid_size) * grid_size
-	return Vector2(grid_x, grid_y)
+	# Find which grid cell the mouse is in and snap to its center
+	var grid_x = floor(pos.x / grid_size)
+	var grid_y = floor(pos.y / grid_size)
+
+	# Calculate center position of that grid cell
+	var center_x = grid_x * grid_size + grid_size / 2
+	var center_y = grid_y * grid_size + grid_size / 2
+
+	return Vector2(center_x, center_y)
 
 func is_valid_placement_position(pos: Vector2) -> bool:
-	# Simple grid-based validation for now
-	var grid_x = int(pos.x / grid_size)
-	var grid_y = int(pos.y / grid_size)
+	# Convert center-based position back to grid indices
+	var grid_x = int(floor((pos.x - grid_size / 2) / grid_size))
+	var grid_y = int(floor((pos.y - grid_size / 2) / grid_size))
 
 	# Check bounds
 	if grid_x < 0 or grid_x >= 20 or grid_y < 0 or grid_y >= 15:
 		return false
 
-	# Don't allow building on the path (row 7)
-	if grid_y == 7:
+	# Don't allow building on path tiles - need to check all path positions
+	# Path includes: row 7 (cols 0-5), row 11 (cols 5-14), row 3 (cols 14-19),
+	# col 5 (rows 7-11), col 14 (rows 3-11)
+	if (grid_y == 7 and grid_x >= 0 and grid_x <= 5) or \
+	   (grid_y == 11 and grid_x >= 5 and grid_x <= 14) or \
+	   (grid_y == 3 and grid_x >= 14 and grid_x <= 19) or \
+	   (grid_x == 5 and grid_y >= 7 and grid_y <= 11) or \
+	   (grid_x == 14 and grid_y >= 3 and grid_y <= 11):
 		return false
 
 	# Check if there's already a tower here
@@ -210,6 +244,12 @@ func attempt_tower_placement(screen_pos: Vector2):
 func place_tower(pos: Vector2):
 	var tower_data = available_towers[selected_tower_type]
 	var cost = tower_data["cost"]
+	var current_honey = GameManager.get_resource("honey")
+
+	# Check if we still have enough honey
+	if current_honey < cost:
+		tower_placement_failed.emit("Not enough honey! Need " + str(cost) + " but only have " + str(current_honey))
+		return
 
 	# Deduct resources
 	GameManager.add_resource("honey", -cost)
@@ -244,6 +284,10 @@ func place_tower(pos: Vector2):
 func cancel_placement():
 	current_mode = PlacementMode.NONE
 	cleanup_preview()
+
+	# Reset cursor to normal
+	Input.set_default_cursor_shape(Input.CURSOR_ARROW)
+
 	placement_mode_changed.emit(false)
 
 func cleanup_preview():

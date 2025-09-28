@@ -154,8 +154,10 @@ func create_enemy(enemy_type: String) -> Enemy:
 	enemy.enemy_died.connect(_on_enemy_died)
 	enemy.enemy_reached_end.connect(_on_enemy_reached_end)
 
-	# Add to scene
-	get_tree().current_scene.add_child(enemy)
+	# Add to UI layer for visibility
+	var td_scene = get_tree().current_scene
+	var ui_canvas = td_scene.get_node("UI")
+	ui_canvas.add_child(enemy)
 	enemies_in_wave.append(enemy)
 
 	enemy_spawned.emit(enemy)
@@ -181,6 +183,11 @@ func complete_wave():
 	is_wave_active = false
 	wave_completed.emit(current_wave, enemies_killed)
 	print("Wave ", current_wave, " completed! Enemies killed: ", enemies_killed)
+	
+	# Check if all waves are completed
+	if current_wave >= wave_definitions.size():
+		print("All waves completed! Victory!")
+		all_waves_completed.emit()
 
 func _on_enemy_died(enemy: Enemy, rewards: Dictionary):
 	if enemy in enemies_in_wave:
@@ -227,3 +234,55 @@ func get_total_waves() -> int:
 
 func is_wave_in_progress() -> bool:
 	return is_wave_active
+
+func get_wave_composition(wave_number: int) -> String:
+	"""Get a formatted string showing remaining/total enemy counts"""
+	if wave_number > wave_definitions.size() or wave_number < 1:
+		return ""
+
+	var wave_data = wave_definitions[wave_number - 1]
+	var total_enemies = 0
+	var remaining_enemies = 0
+
+	# Calculate total enemies in wave
+	for enemy_group in wave_data["enemies"]:
+		total_enemies += enemy_group["count"]
+
+	# Calculate remaining enemies for active wave
+	if is_wave_active and current_wave == wave_number:
+		remaining_enemies = total_enemies - enemies_killed
+		remaining_enemies = max(0, remaining_enemies)
+	else:
+		remaining_enemies = total_enemies
+
+	# Group enemies by type to avoid duplicates
+	var enemy_counts: Dictionary = {}
+	for enemy_group in wave_data["enemies"]:
+		var type = enemy_group["type"]
+		if not enemy_counts.has(type):
+			enemy_counts[type] = 0
+		enemy_counts[type] += enemy_group["count"]
+
+	# Build x/y format string
+	var composition_parts: Array[String] = []
+	
+	for enemy_type in enemy_counts:
+		var count = enemy_counts[enemy_type]
+		
+		# Convert type to display name
+		var display_name = ""
+		match enemy_type:
+			"standard":
+				display_name = "Worker Wasps"
+			"bruiser":
+				display_name = "Bruiser Wasps"
+			"horde":
+				display_name = "Swarm Wasps"
+			"leader":
+				display_name = "Leader Wasps"
+			_:
+				display_name = enemy_type.capitalize() + " Wasps"
+
+		composition_parts.append(str(remaining_enemies) + "/" + str(total_enemies) + " " + display_name)
+
+	return ", ".join(composition_parts)

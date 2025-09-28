@@ -7,11 +7,17 @@ extends Control
 @onready var barracks_spot = $UI/BuildingSpots/BarracksSpot
 
 func _ready():
-	back_button.pressed.connect(_on_back_pressed)
-	hive_spot.pressed.connect(_on_hive_pressed)
-	workshop_spot.pressed.connect(_on_workshop_pressed)
-	port_spot.pressed.connect(_on_port_pressed)
-	barracks_spot.pressed.connect(_on_barracks_pressed)
+	# Connect button signals with null checks
+	if back_button:
+		back_button.pressed.connect(_on_back_pressed)
+	if hive_spot:
+		hive_spot.pressed.connect(_on_hive_pressed)
+	if workshop_spot:
+		workshop_spot.pressed.connect(_on_workshop_pressed)
+	if port_spot:
+		port_spot.pressed.connect(_on_port_pressed)
+	if barracks_spot:
+		barracks_spot.pressed.connect(_on_barracks_pressed)
 
 func _on_back_pressed():
 	SceneManager.goto_main_menu()

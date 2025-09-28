@@ -89,22 +89,56 @@ func setup_collision():
 
 func setup_health_bar():
 	health_bar = ProgressBar.new()
-	health_bar.size = Vector2(20, 4)
-	health_bar.position = Vector2(-10, -14)
+	health_bar.size = Vector2(24, 3)  # Original width, half height for horizontal bar
+	health_bar.position = Vector2(-12, 12)  # Position below enemy
 	health_bar.max_value = max_health
 	health_bar.value = current_health
 	health_bar.show_percentage = false
+	health_bar.z_index = 10  # Ensure it's visible above other elements
 
-	# Style the health bar
-	var style_box = StyleBoxFlat.new()
-	style_box.bg_color = Color.RED
-	health_bar.add_theme_stylebox_override("fill", style_box)
+	# Style the health bar with more visible colors
+	var fill_style = StyleBoxFlat.new()
+	fill_style.bg_color = Color.LIME_GREEN  # Bright green for health
+	fill_style.border_width_left = 1
+	fill_style.border_width_right = 1
+	fill_style.border_width_top = 1
+	fill_style.border_width_bottom = 1
+	fill_style.border_color = Color.BLACK
+	health_bar.add_theme_stylebox_override("fill", fill_style)
 
 	var bg_style = StyleBoxFlat.new()
-	bg_style.bg_color = Color.DARK_GRAY
+	bg_style.bg_color = Color.DARK_RED  # Dark red background
+	bg_style.border_width_left = 1
+	bg_style.border_width_right = 1
+	bg_style.border_width_top = 1
+	bg_style.border_width_bottom = 1
+	bg_style.border_color = Color.BLACK
 	health_bar.add_theme_stylebox_override("background", bg_style)
 
 	add_child(health_bar)
+	print("Health bar created for enemy with health: ", current_health, "/", max_health)
+
+func update_health_bar_color():
+	if not health_bar:
+		return
+
+	var health_percentage = current_health / max_health
+	var fill_style = StyleBoxFlat.new()
+
+	# Change color based on health percentage
+	if health_percentage > 0.66:
+		fill_style.bg_color = Color.LIME_GREEN  # High health - green
+	elif health_percentage > 0.33:
+		fill_style.bg_color = Color.YELLOW  # Medium health - yellow
+	else:
+		fill_style.bg_color = Color.RED  # Low health - red
+
+	fill_style.border_width_left = 1
+	fill_style.border_width_right = 1
+	fill_style.border_width_top = 1
+	fill_style.border_width_bottom = 1
+	fill_style.border_color = Color.BLACK
+	health_bar.add_theme_stylebox_override("fill", fill_style)
 
 func get_enemy_color() -> Color:
 	match enemy_type:
@@ -212,6 +246,7 @@ func take_damage(damage: float, damage_type: String = "physical"):
 
 	# Update health bar
 	health_bar.value = current_health
+	update_health_bar_color()
 
 	# Emit damage signal
 	enemy_took_damage.emit(self, actual_damage, current_health)
@@ -236,13 +271,14 @@ func calculate_damage(damage: float, damage_type: String) -> float:
 func show_damage_number(damage: float):
 	var damage_label = Label.new()
 	damage_label.text = str(int(damage))
-	damage_label.position = Vector2(-10, -25)
+	damage_label.position = Vector2(20, -8)  # Position to the right of enemy
 	damage_label.add_theme_color_override("font_color", Color.RED)
+	damage_label.add_theme_font_size_override("font_size", 14)  # Make it slightly bigger for better visibility
 	add_child(damage_label)
 
-	# Animate damage number
+	# Animate damage number floating up and to the right
 	var tween = create_tween()
-	tween.parallel().tween_property(damage_label, "position:y", -35, 0.5)
+	tween.parallel().tween_property(damage_label, "position", Vector2(30, -18), 0.5)
 	tween.parallel().tween_property(damage_label, "modulate:a", 0.0, 0.5)
 	tween.tween_callback(damage_label.queue_free)
 

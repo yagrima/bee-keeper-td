@@ -64,10 +64,26 @@ func get_resource(resource_type: String) -> int:
 		_:
 			return 0
 
-func save_game():
-	# TODO: Implement save system
-	print("Game saved")
+func save_game(save_name: String = "main") -> bool:
+	"""Save the current game state using SaveManager"""
+	return SaveManager.save_game(save_name)
 
-func load_game():
-	# TODO: Implement load system
-	print("Game loaded")
+func load_game(save_name: String = "main") -> bool:
+	"""Load a saved game using SaveManager"""
+	return SaveManager.load_game(save_name)
+
+func get_save_files() -> Array[String]:
+	"""Get list of available save files"""
+	return SaveManager.get_save_files()
+
+func save_file_exists(save_name: String) -> bool:
+	"""Check if a save file exists"""
+	return SaveManager.save_file_exists(save_name)
+
+func delete_save_file(save_name: String) -> bool:
+	"""Delete a save file"""
+	return SaveManager.delete_save_file(save_name)
+
+func get_save_file_info(save_name: String) -> Dictionary:
+	"""Get information about a save file"""
+	return SaveManager.get_save_file_info(save_name)

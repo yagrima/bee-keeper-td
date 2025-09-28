@@ -82,11 +82,17 @@ func setup_range_detection():
 	collision_shape.shape = circle_shape
 	range_area.add_child(collision_shape)
 
+	# Set collision layers to detect enemies
+	range_area.collision_layer = 1  # Tower layer
+	range_area.collision_mask = 2   # Detect enemy layer
+
 	# Connect signals
 	range_area.body_entered.connect(_on_enemy_entered_range)
 	range_area.body_exited.connect(_on_enemy_exited_range)
 	range_area.area_entered.connect(_on_enemy_entered_range)
 	range_area.area_exited.connect(_on_enemy_exited_range)
+
+	print("Tower range detection setup with radius: ", range)
 
 func get_tower_color() -> Color:
 	match tower_type:
@@ -168,16 +174,20 @@ func update_attack_timer(delta):
 
 func perform_attack():
 	if not current_target or not is_instance_valid(current_target):
+		print("Tower attack cancelled - no valid target")
 		return
 
 	# Reset attack timer
 	attack_timer = 1.0 / attack_speed
+
+	print("Tower ", tower_name, " performing attack on ", current_target.name)
 
 	# Perform the actual attack (override in derived classes)
 	execute_attack()
 
 func execute_attack():
 	# Base implementation - override in derived classes
+	print("Base execute_attack() called - should be overridden")
 	print(tower_name + " attacks " + str(current_target))
 
 func update_visual():
@@ -187,13 +197,17 @@ func update_visual():
 		visual.rotation = direction.angle() + PI/2
 
 func _on_enemy_entered_range(body):
+	print("Tower detected something entering range: ", body.name if body else "null")
 	if body.has_method("take_damage"):  # Check if it's an enemy
 		if body not in enemies_in_range:
 			enemies_in_range.append(body)
+			print("Enemy added to range: ", enemies_in_range.size(), " enemies in range")
 
 func _on_enemy_exited_range(body):
+	print("Tower detected something exiting range: ", body.name if body else "null")
 	if body in enemies_in_range:
 		enemies_in_range.erase(body)
+		print("Enemy removed from range: ", enemies_in_range.size(), " enemies in range")
 
 func upgrade():
 	if can_upgrade():
