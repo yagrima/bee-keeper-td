@@ -54,8 +54,10 @@ func handle_placement_input(event):
 	elif event is InputEventMouseButton:
 		if event.pressed:
 			if event.button_index == MOUSE_BUTTON_LEFT:
+				print("Left click detected for tower placement!")
 				attempt_tower_placement(event.position)
 			elif event.button_index == MOUSE_BUTTON_RIGHT:
+				print("Right click detected - cancelling placement")
 				cancel_placement()
 
 func handle_selection_input(event):
@@ -64,14 +66,19 @@ func handle_selection_input(event):
 			select_tower_at_position(event.position)
 
 func start_tower_placement(tower_type: String):
+	print("Starting tower placement for: ", tower_type)
+
 	if tower_type not in available_towers:
 		tower_placement_failed.emit("Invalid tower type: " + tower_type)
 		return
 
 	var tower_data = available_towers[tower_type]
 	var cost = tower_data["cost"]
+	var current_honey = GameManager.get_resource("honey")
 
-	if GameManager.get_resource("honey") < cost:
+	print("Tower cost: ", cost, " Current honey: ", current_honey)
+
+	if current_honey < cost:
 		tower_placement_failed.emit("Not enough honey! Need " + str(cost))
 		return
 
@@ -80,10 +87,16 @@ func start_tower_placement(tower_type: String):
 	create_placement_preview()
 	placement_mode_changed.emit(true)
 
+	print("Tower placement mode activated!")
+
 func create_placement_preview():
-	# Create preview tower
+	# Create preview tower in UI layer for visibility
+	var td_scene = get_parent()
+	var ui_canvas = td_scene.get_node("UI")
+
 	placement_preview = Node2D.new()
-	add_child(placement_preview)
+	placement_preview.name = "TowerPlacementPreview"
+	ui_canvas.add_child(placement_preview)
 
 	# Create visual preview
 	var preview_visual = ColorRect.new()
@@ -91,10 +104,13 @@ func create_placement_preview():
 	preview_visual.position = Vector2(-12, -12)
 	preview_visual.color = Color.GREEN
 	preview_visual.modulate.a = 0.7
+	preview_visual.z_index = 10  # Above everything
 	placement_preview.add_child(preview_visual)
 
 	# Create range preview
 	create_range_preview()
+
+	print("Tower placement preview created in UI layer")
 
 func create_range_preview():
 	if not show_range_preview:
@@ -130,7 +146,7 @@ func update_placement_preview(screen_pos: Vector2):
 	if not placement_preview:
 		return
 
-	# Get mouse position relative to the map (accounting for map offset)
+	# Get mouse position (UI coordinates)
 	var mouse_pos = get_global_mouse_position()
 	var td_scene = get_parent()
 	var map_offset = td_scene.get_meta("map_offset", Vector2.ZERO)
@@ -139,13 +155,16 @@ func update_placement_preview(screen_pos: Vector2):
 	var map_pos = mouse_pos - map_offset
 	var grid_pos = snap_to_grid(map_pos)
 
-	# Place preview at world position (without UI offset)
-	placement_preview.global_position = grid_pos
+	# Place preview at UI position (with map offset)
+	var ui_pos = grid_pos + map_offset
+	placement_preview.global_position = ui_pos
 
 	# Check if position is valid
 	var is_valid = is_valid_placement_position(grid_pos)
 	var preview_visual = placement_preview.get_child(0)
 	preview_visual.color = Color.GREEN if is_valid else Color.RED
+
+	print("Preview pos: UI=", ui_pos, " Map=", grid_pos, " Valid=", is_valid)
 
 func snap_to_grid(pos: Vector2) -> Vector2:
 	var grid_x = round(pos.x / grid_size) * grid_size
@@ -199,9 +218,13 @@ func place_tower(pos: Vector2):
 	var tower_script = load(tower_data["script"])
 	var tower = tower_script.new() as Tower
 
-	# Position and add to scene
-	tower.global_position = pos
-	tower_defense_scene.add_child(tower)
+	# Position tower at world coordinates (need to add map offset for UI positioning)
+	var map_offset = tower_defense_scene.get_meta("map_offset", Vector2.ZERO)
+
+	# Add tower to UI layer for visibility
+	var ui_canvas = tower_defense_scene.get_node("UI")
+	tower.global_position = pos + map_offset  # Convert to UI coordinates
+	ui_canvas.add_child(tower)
 	placed_towers.append(tower)
 
 	# Connect tower signals
@@ -210,9 +233,13 @@ func place_tower(pos: Vector2):
 	# Emit success signal
 	tower_placed.emit(tower, pos)
 
+	# Debug output
+	print("Tower placed: " + tower_data["name"] + " at world pos " + str(pos))
+	print("Tower node added to scene: ", tower_defense_scene.name)
+	print("Tower children count: ", tower_defense_scene.get_children().size())
+
 	# Continue placement or exit based on user preference
 	# For now, continue placing the same tower type
-	print("Tower placed: " + tower_data["name"] + " at " + str(pos))
 
 func cancel_placement():
 	current_mode = PlacementMode.NONE
