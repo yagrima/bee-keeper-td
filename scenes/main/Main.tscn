@@ -1,0 +1,41 @@
+[gd_scene load_steps=2 format=3 uid="uid://c3jb5muvf0hg8"]
+
+[ext_resource type="Script" path="res://scripts/Main.gd" id="1_0x4d0"]
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_0x4d0")
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="MenuContainer" type="VBoxContainer" parent="UI"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -100.0
+offset_top = -75.0
+offset_right = 100.0
+offset_bottom = 75.0
+
+[node name="Title" type="Label" parent="UI/MenuContainer"]
+layout_mode = 2
+text = "Bee Keeper TD"
+horizontal_alignment = 1
+
+[node name="PlayButton" type="Button" parent="UI/MenuContainer"]
+layout_mode = 2
+text = "Play Tower Defense"
+
+[node name="SettlementButton" type="Button" parent="UI/MenuContainer"]
+layout_mode = 2
+text = "Visit Settlement"
+
+[node name="QuitButton" type="Button" parent="UI/MenuContainer"]
+layout_mode = 2
+text = "Quit"

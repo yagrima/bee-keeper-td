@@ -1,0 +1,74 @@
+[gd_scene load_steps=2 format=3 uid="uid://bwt8x7qpvfnps"]
+
+[ext_resource type="Script" path="res://scripts/Settlement.gd" id="1_settlement"]
+
+[node name="Settlement" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_settlement")
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="Background" type="ColorRect" parent="UI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.2, 0.4, 0.2, 1)
+
+[node name="Header" type="HBoxContainer" parent="UI"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = -50.0
+offset_right = 400.0
+offset_bottom = -10.0
+
+[node name="BackButton" type="Button" parent="UI/Header"]
+layout_mode = 2
+text = "Back to Main Menu"
+
+[node name="SettlementTitle" type="Label" parent="UI"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -100.0
+offset_top = 20.0
+offset_right = 100.0
+offset_bottom = 60.0
+text = "Settlement"
+horizontal_alignment = 1
+
+[node name="BuildingSpots" type="GridContainer" parent="UI"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -150.0
+offset_right = 200.0
+offset_bottom = 150.0
+columns = 2
+
+[node name="HiveSpot" type="Button" parent="UI/BuildingSpots"]
+layout_mode = 2
+text = "The Hive"
+
+[node name="WorkshopSpot" type="Button" parent="UI/BuildingSpots"]
+layout_mode = 2
+text = "Workshop"
+
+[node name="PortSpot" type="Button" parent="UI/BuildingSpots"]
+layout_mode = 2
+text = "The Port"
+
+[node name="BarracksSpot" type="Button" parent="UI/BuildingSpots"]
+layout_mode = 2
+text = "Barracks"
