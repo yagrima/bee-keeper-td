@@ -38,14 +38,17 @@ func _ready():
 	update_ui()
 
 func create_test_visual():
+	# Create visual elements in the UI layer instead of Node2D
+	var ui_canvas = $UI
+
 	# Create a simple test rectangle that should definitely be visible
 	var test_rect = ColorRect.new()
 	test_rect.name = "TestVisual"
 	test_rect.size = Vector2(200, 200)
 	test_rect.position = Vector2(100, 100)
 	test_rect.color = Color.RED
-	add_child(test_rect)
-	print("Test visual created: RED rectangle at ", test_rect.position)
+	ui_canvas.add_child(test_rect)
+	print("Test visual created in UI: RED rectangle at ", test_rect.position)
 
 func setup_basic_map():
 	# Create visual map using ColorRect nodes instead of TileMap for now
@@ -70,24 +73,32 @@ func create_simple_texture() -> ImageTexture:
 	return texture
 
 func create_visual_map():
+	# Create map background in UI layer
+	var ui_canvas = $UI
+
 	# Create a single large background first
 	var map_background = ColorRect.new()
 	map_background.name = "MapBackground"
 	map_background.size = Vector2(640, 480)  # 20*32 x 15*32
 	map_background.position = Vector2(0, 0)
 	map_background.color = Color(0.2, 0.6, 0.2)  # Green grass
-	add_child(map_background)
+	map_background.z_index = -10  # Behind everything else
+	ui_canvas.add_child(map_background)
 
-	print("Visual map created: ", map_background.size, " at ", map_background.position)
+	print("Visual map created in UI: ", map_background.size, " at ", map_background.position)
 
 func create_simple_path():
+	# Create path in UI layer
+	var ui_canvas = $UI
+
 	# Create visible path as one large rectangle
 	var path_rect = ColorRect.new()
 	path_rect.name = "PathBackground"
 	path_rect.size = Vector2(640, 32)  # Full width, one tile height
 	path_rect.position = Vector2(0, 7 * 32)  # Row 7
 	path_rect.color = Color(0.6, 0.4, 0.2)  # Brown path
-	add_child(path_rect)
+	path_rect.z_index = -5  # Above map background but below other UI
+	ui_canvas.add_child(path_rect)
 
 	var path_points = []
 
@@ -97,7 +108,7 @@ func create_simple_path():
 
 	# Store path for enemy movement
 	set_meta("path_points", path_points)
-	print("Path created: ", path_rect.size, " at ", path_rect.position)
+	print("Path created in UI: ", path_rect.size, " at ", path_rect.position)
 	print("Path points: ", path_points.size(), " points from ", path_points[0], " to ", path_points[-1])
 
 func setup_wave_manager():
