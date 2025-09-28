@@ -89,8 +89,9 @@ func setup_collision():
 
 func setup_health_bar():
 	health_bar = ProgressBar.new()
-	health_bar.size = Vector2(24, 3)  # Original width, half height for horizontal bar
-	health_bar.position = Vector2(-12, 12)  # Position below enemy
+	# Start with vertical orientation (default)
+	health_bar.size = Vector2(3, 12)  # 3 pixels wide, 12 pixels high
+	health_bar.position = Vector2(-1.5, 12)  # Position below enemy (centered for 3px width)
 	health_bar.max_value = max_health
 	health_bar.value = current_health
 	health_bar.show_percentage = false
@@ -117,6 +118,30 @@ func setup_health_bar():
 
 	add_child(health_bar)
 	print("Health bar created for enemy with health: ", current_health, "/", max_health)
+
+func update_health_bar_orientation(direction: Vector2):
+	if not health_bar:
+		return
+	
+	# Determine if movement is primarily horizontal or vertical
+	var abs_x = abs(direction.x)
+	var abs_y = abs(direction.y)
+	
+	if abs_x > abs_y:
+		# Horizontal movement - make bar horizontal (wide)
+		health_bar.size = Vector2(12, 3)  # 12 pixels wide, 3 pixels high
+		health_bar.position = Vector2(-6, 12)  # Centered horizontally
+	else:
+		# Vertical movement - make bar vertical (tall)
+		health_bar.size = Vector2(3, 12)  # 3 pixels wide, 12 pixels high
+		
+		# Position based on vertical movement direction
+		if direction.y > 0:
+			# Moving down - position on left side
+			health_bar.position = Vector2(-8, 12)  # Left side
+		else:
+			# Moving up - position on right side
+			health_bar.position = Vector2(5, 12)  # Right side
 
 func update_health_bar_color():
 	if not health_bar:
@@ -224,6 +249,7 @@ func move_along_path(delta, speed):
 	if end_point != start_point:
 		var direction = start_point.direction_to(end_point)
 		visual.rotation = direction.angle()
+		update_health_bar_orientation(direction)
 
 func update_combat(delta):
 	# TODO: Implement tower attacking for Bruiser enemies

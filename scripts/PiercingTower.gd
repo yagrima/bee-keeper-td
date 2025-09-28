@@ -5,6 +5,8 @@ extends Tower
 @export var projectile_scene: PackedScene
 @export var projectile_speed: float = 250.0
 @export var projectile_color: Color = Color.CYAN
+@export var projectile_homing: bool = true  # Enable homing for Piercing Shooter
+@export var projectile_turn_rate: float = 6.0
 
 # Audio and effects
 var muzzle_flash: Node2D
@@ -75,14 +77,15 @@ func fire_projectile():
 
 	print("Piercing projectile created with penetration: ", penetration)
 
-	# Initialize projectile
+	# Initialize projectile with homing target
 	var start_pos = attack_point.global_position
-	var target_pos = current_target.global_position
 
-	projectile.initialize(start_pos, target_pos, damage)
+	projectile.initialize_with_target(start_pos, current_target, damage)
 	projectile.speed = projectile_speed
 	projectile.projectile_color = projectile_color
 	projectile.penetration = penetration  # Set penetration from tower
+	projectile.is_homing = projectile_homing  # Set homing from tower
+	projectile.turn_rate = projectile_turn_rate  # Set turn rate from tower
 
 	# Connect signals for feedback
 	projectile.projectile_hit.connect(_on_projectile_hit)

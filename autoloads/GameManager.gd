@@ -64,6 +64,23 @@ func get_resource(resource_type: String) -> int:
 		_:
 			return 0
 
+func set_resource(resource_type: String, amount: int):
+	match resource_type:
+		"honey":
+			player_data.honey = amount
+		"honeygems":
+			player_data.honeygems = amount
+		"wax":
+			player_data.wax = amount
+		"wood":
+			player_data.wood = amount
+		_:
+			print("Unknown resource type: ", resource_type)
+			return
+	
+	resources_changed.emit(resource_type, amount)
+	print("Set ", resource_type, " to ", amount)
+
 func save_game(save_name: String = "main") -> bool:
 	"""Save the current game state using SaveManager"""
 	return SaveManager.save_game(save_name)

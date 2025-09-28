@@ -14,7 +14,8 @@ var hotkeys: Dictionary = {
 	"save_game": KEY_F5,
 	"load_game": KEY_F9,
 	"quick_save": KEY_F6,
-	"quick_load": KEY_F7
+	"quick_load": KEY_F7,
+	"speed_toggle": KEY_Q
 }
 
 # Action names for display
@@ -26,7 +27,8 @@ var action_names: Dictionary = {
 	"save_game": "Save Game",
 	"load_game": "Load Game",
 	"quick_save": "Quick Save",
-	"quick_load": "Quick Load"
+	"quick_load": "Quick Load",
+	"speed_toggle": "Speed Toggle"
 }
 
 func _ready():

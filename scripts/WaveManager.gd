@@ -24,8 +24,12 @@ var spawn_interval: float = 1.0
 # Wave definitions
 var wave_definitions: Array[Dictionary] = []
 
+# Scaling configuration
+var scaling_config: WaveScalingConfig
+
 func _ready():
 	setup_wave_definitions()
+	setup_scaling_config()
 
 func _process(delta):
 	if is_wave_active:
@@ -146,6 +150,9 @@ func create_enemy(enemy_type: String) -> Enemy:
 			print("Unknown enemy type: ", enemy_type)
 			return null
 
+	# Apply wave scaling to enemy stats
+	apply_wave_scaling(enemy)
+
 	# Set up enemy
 	enemy.global_position = spawn_point
 	enemy.set_path(enemy_path)
@@ -161,7 +168,7 @@ func create_enemy(enemy_type: String) -> Enemy:
 	enemies_in_wave.append(enemy)
 
 	enemy_spawned.emit(enemy)
-	print("Spawned ", enemy_type, " enemy")
+	print("Spawned ", enemy_type, " enemy (Wave %d scaling: %.1fx)" % [current_wave, get_wave_scaling_factor()])
 
 	return enemy
 
@@ -234,6 +241,47 @@ func get_total_waves() -> int:
 
 func is_wave_in_progress() -> bool:
 	return is_wave_active
+
+func setup_scaling_config():
+	"""Initialize the scaling configuration"""
+	scaling_config = WaveScalingConfig.new()
+	print("Wave scaling configuration initialized")
+
+func get_wave_scaling_factor() -> float:
+	"""Calculate the scaling factor for the current wave using config"""
+	if not scaling_config:
+		return 1.0
+	return scaling_config.get_scaling_factor(current_wave)
+
+func apply_wave_scaling(enemy: Enemy):
+	"""Apply wave scaling to enemy stats using configuration"""
+	if current_wave <= 1 or not scaling_config:
+		return  # No scaling for wave 1
+	
+	var scaling_factor = scaling_config.get_scaling_factor(current_wave)
+	
+	# Store original values for display
+	var original_health = enemy.max_health
+	var original_reward = enemy.honey_reward
+	
+	# Apply scaling
+	enemy.max_health *= scaling_factor * scaling_config.health_scaling
+	enemy.current_health = enemy.max_health  # Reset current health to new max
+	
+	var reward_scaling = 1.0 + (scaling_factor - 1.0) * scaling_config.reward_scaling
+	enemy.honey_reward = int(enemy.honey_reward * reward_scaling)
+	
+	print("Applied wave scaling: HP %.1f->%.1f, Reward %d->%d (%.1fx total)" % [
+		original_health, enemy.max_health,
+		original_reward, enemy.honey_reward,
+		scaling_factor
+	])
+
+func get_wave_scaling_info() -> String:
+	"""Get information about current wave scaling using configuration"""
+	if not scaling_config:
+		return "Normal difficulty"
+	return scaling_config.get_scaling_info(current_wave)
 
 func get_wave_composition(wave_number: int) -> String:
 	"""Get a formatted string showing remaining/total enemy counts"""

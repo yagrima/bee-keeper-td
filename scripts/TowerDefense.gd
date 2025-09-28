@@ -13,10 +13,12 @@ extends Node2D
 @onready var place_tower_button = $UI/GameUI/Controls/PlaceTowerButton
 @onready var tower_type_cycle_button: Button
 @onready var back_button = $UI/GameUI/Controls/BackButton
+@onready var speed_button: Button
 
 var current_wave: int = 1
 var player_health: int = 20
 var honey: int = 100
+var speed_mode: int = 0  # 0 = normal, 1 = 2x, 2 = 3x
 
 # Tower placement
 var tower_placer: TowerPlacer
@@ -31,8 +33,16 @@ var cursor_timer: Timer
 var is_hovering_ui: bool = false
 var is_in_tower_placement: bool = false
 
+# Tower selection and range display
+var selected_tower: Tower = null
+var range_indicator: Node2D = null
+var is_placing_tower: bool = false
+
 func _ready():
 	GameManager.change_game_state(GameManager.GameState.TOWER_DEFENSE)
+
+	# Reset game state for new game
+	reset_game_state()
 
 	# Connect button signals with null checks
 	if start_wave_button:
@@ -47,6 +57,9 @@ func _ready():
 
 	# Connect to hotkey changes to update button texts
 	HotkeyManager.hotkey_changed.connect(_on_hotkey_changed)
+	
+	# Connect to GameManager signals for real-time UI updates
+	GameManager.resources_changed.connect(_on_resources_changed)
 
 	# Connect mouse hover signals for cursor management
 	if start_wave_button:
@@ -59,6 +72,7 @@ func _ready():
 	setup_cursor_timer()
 	setup_wave_composition_ui()
 	setup_tower_type_ui()
+	setup_speed_button()
 	update_ui()
 	
 	# Check for pending save data to load
@@ -296,11 +310,25 @@ func _on_start_wave_pressed():
 		print("Wave already in progress!")
 		return
 
+	# Clear tower selection when starting wave
+	clear_tower_selection()
+
 	wave_manager.start_wave(current_wave)
 	if start_wave_button:
 		start_wave_button.disabled = true
 
 func _on_place_tower_pressed():
+	# Clear tower selection when starting tower placement
+	clear_tower_selection()
+	
+	# Check if player has enough honey for the tower
+	var tower_cost = get_tower_cost(current_tower_type)
+	var current_honey = GameManager.get_resource("honey")
+	
+	if current_honey < tower_cost:
+		show_insufficient_honey_dialog(tower_cost, current_honey)
+		return
+	
 	tower_placer.start_tower_placement(current_tower_type)
 
 func _on_tower_type_cycle_pressed():
@@ -335,8 +363,9 @@ func update_ui():
 	# Update wave composition display
 	if wave_composition_label and wave_manager:
 		var composition = wave_manager.get_wave_composition(current_wave)
+		var scaling_info = wave_manager.get_wave_scaling_info()
 		if composition != "":
-			wave_composition_label.text = "Wave " + str(current_wave) + ": " + composition
+			wave_composition_label.text = "Wave " + str(current_wave) + ": " + composition + " (" + scaling_info + ")"
 		else:
 			wave_composition_label.text = ""
 
@@ -349,7 +378,11 @@ func take_damage(amount: int):
 	update_ui()
 
 	if player_health <= 0:
-		game_over()
+		trigger_game_over()
+
+func trigger_game_over():
+	print("Game Over! Player health reached 0")
+	show_game_over_screen()
 
 func setup_tower_placer():
 	tower_placer = TowerPlacer.new()
@@ -361,6 +394,17 @@ func setup_tower_placer():
 	tower_placer.placement_mode_changed.connect(_on_placement_mode_changed)
 
 func _input(event):
+	# Handle mouse clicks for tower selection first
+	if event is InputEventMouseButton and event.pressed:
+		print("Mouse button pressed: ", event.button_index, " at position: ", event.position)
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			handle_tower_click(event.position)
+		elif event.button_index == MOUSE_BUTTON_RIGHT:
+			# Right click - clear selection
+			clear_tower_selection()
+		return  # Don't process other events for mouse clicks
+	
+	# Handle keyboard events
 	if not event or not event is InputEventKey or not event.pressed:
 		return
 	
@@ -386,10 +430,216 @@ func _input(event):
 	elif HotkeyManager.is_hotkey_pressed(event, "quick_load"):
 		# Quick load
 		_on_quick_load_pressed()
+	elif HotkeyManager.is_hotkey_pressed(event, "speed_toggle"):
+		# Toggle speed
+		_on_speed_button_pressed()
+
+
+func handle_tower_click(click_position: Vector2):
+	"""Handle left click to select towers and show range"""
+	print("Tower click detected at position: ", click_position)
+	
+	# Don't select towers if we just placed one
+	if is_placing_tower:
+		print("Ignoring tower click - just placed a tower")
+		return
+	
+	# Clear previous selection first
+	clear_tower_selection()
+	
+	# Check if we clicked on a tower
+	var tower = get_tower_at_position(click_position)
+	if tower:
+		print("Tower found: ", tower.tower_name)
+		select_tower(tower)
+	else:
+		print("No tower found at click position")
+
+func get_tower_at_position(position: Vector2) -> Tower:
+	"""Get tower at the specified position"""
+	if not tower_placer:
+		print("No tower placer found")
+		return null
+	
+	print("=== TOWER DETECTION ===")
+	print("Checking ", tower_placer.placed_towers.size(), " towers for click at ", position)
+	
+	var closest_tower: Tower = null
+	var closest_distance: float = 999999.0
+	
+	for i in range(tower_placer.placed_towers.size()):
+		var tower = tower_placer.placed_towers[i]
+		if tower and is_instance_valid(tower):
+			var distance = tower.global_position.distance_to(position)
+			print("Tower ", i, " (", tower.tower_name, ") at ", tower.global_position, " distance: ", distance)
+			
+			if distance <= 30:  # Within selection radius
+				if distance < closest_distance:
+					closest_distance = distance
+					closest_tower = tower
+					print("New closest tower: ", tower.tower_name, " at distance: ", distance)
+		else:
+			print("Tower ", i, " is invalid or null")
+	
+	if closest_tower:
+		print("Selected closest tower: ", closest_tower.tower_name, " at distance: ", closest_distance)
+	else:
+		print("No tower found within selection radius")
+	
+	return closest_tower
+
+func select_tower(tower: Tower):
+	"""Select a tower and show its range"""
+	if not tower or not is_instance_valid(tower):
+		print("ERROR: Invalid tower passed to select_tower")
+		return
+	
+	selected_tower = tower
+	show_tower_range(tower)
+	print("Selected tower: ", tower.tower_name)
+
+func show_tower_range(tower: Tower):
+	"""Show range indicator for the selected tower"""
+	print("=== SHOWING TOWER RANGE ===")
+	
+	# Validate tower before proceeding
+	if not tower or not is_instance_valid(tower):
+		print("ERROR: Invalid tower in show_tower_range")
+		return
+	
+	print("Tower: ", tower.tower_name, " at position: ", tower.global_position, " with range: ", tower.range)
+	
+	# Remove existing range indicator
+	clear_range_indicator()
+	
+	# Wait one frame to ensure cleanup is complete
+	await get_tree().process_frame
+	
+	# Double-check tower is still valid after frame wait
+	if not tower or not is_instance_valid(tower):
+		print("ERROR: Tower became invalid during range indicator creation")
+		return
+	
+	print("Creating new range indicator for tower: ", tower.tower_name)
+	
+	# Create new range indicator
+	range_indicator = Node2D.new()
+	range_indicator.name = "RangeIndicator_" + str(tower.get_instance_id())
+	
+	# Create round range indicator using a custom drawing node
+	var range_circle = create_round_range_indicator(tower.range)
+	range_indicator.add_child(range_circle)
+	
+	# Position at tower location
+	range_indicator.global_position = tower.global_position
+	range_indicator.z_index = 5  # Ensure visibility
+	
+	# Add to scene
+	var ui_canvas = $UI
+	ui_canvas.add_child(range_indicator)
+	
+	print("Range indicator created: ", range_indicator.name, " at position: ", range_indicator.global_position, " with range: ", tower.range)
+	print("=== RANGE INDICATOR SETUP COMPLETE ===")
+
+func create_round_range_indicator(range: float) -> Node2D:
+	"""Create a round range indicator using Line2D like in TowerPlacer"""
+	var indicator = Node2D.new()
+	indicator.name = "RoundRangeIndicator"
+	
+	# Create range circle using Line2D (same as TowerPlacer)
+	var line = Line2D.new()
+	line.width = 2.0
+	line.default_color = Color(0.5, 0.5, 1.0, 0.5)  # Same color as TowerPlacer
+	
+	var points = []
+	var segments = 32
+	for i in range(segments + 1):
+		var angle = i * 2 * PI / segments
+		var point = Vector2(cos(angle), sin(angle)) * range
+		points.append(point)
+	
+	line.points = PackedVector2Array(points)
+	indicator.add_child(line)
+	
+	return indicator
+
+func clear_tower_selection():
+	"""Clear tower selection and hide range indicator"""
+	selected_tower = null
+	clear_range_indicator()
+
+func clear_range_indicator():
+	"""Remove range indicator from scene"""
+	print("=== CLEARING RANGE INDICATOR ===")
+	
+	if range_indicator:
+		print("Clearing current range indicator: ", range_indicator.name)
+		if range_indicator.get_parent():
+			range_indicator.get_parent().remove_child(range_indicator)
+		range_indicator.queue_free()
+		range_indicator = null
+		print("Current range indicator cleared")
+	
+	# Additional cleanup: remove any remaining range indicators from UI
+	var ui_canvas = $UI
+	if ui_canvas:
+		var children_to_remove = []
+		for child in ui_canvas.get_children():
+			if child.name.begins_with("RangeIndicator"):
+				print("Found leftover range indicator: ", child.name)
+				children_to_remove.append(child)
+		
+		for child in children_to_remove:
+			print("Removing leftover range indicator: ", child.name)
+			ui_canvas.remove_child(child)
+			child.queue_free()
+		
+		if children_to_remove.size() > 0:
+			print("Removed ", children_to_remove.size(), " leftover range indicators")
+		else:
+			print("No leftover range indicators found")
+	else:
+		print("No UI canvas found for cleanup")
+	
+	print("=== RANGE INDICATOR CLEANUP COMPLETE ===")
+
+func get_tower_cost(tower_type: String) -> int:
+	"""Get the cost of a tower type"""
+	match tower_type:
+		"basic_shooter":
+			return 25
+		"piercing_shooter":
+			return 35
+		_:
+			return 25
+
+func show_insufficient_honey_dialog(required_honey: int, current_honey: int):
+	"""Show dialog when player doesn't have enough honey"""
+	var dialog = AcceptDialog.new()
+	dialog.title = "Insufficient Honey"
+	dialog.dialog_text = "You need " + str(required_honey) + " honey to build this tower.\nYou currently have " + str(current_honey) + " honey."
+	dialog.size = Vector2(300, 150)
+	
+	# Add to scene
+	var ui_canvas = $UI
+	ui_canvas.add_child(dialog)
+	
+	# Center the dialog
+	var window_size = get_viewport().get_visible_rect().size
+	dialog.position = (window_size - dialog.size) / 2
+	
+	# Auto-close after 3 seconds
+	var timer = get_tree().create_timer(3.0)
+	timer.timeout.connect(dialog.queue_free)
 
 func _on_tower_placed(tower: Tower, position: Vector2):
 	print("Tower placed successfully: " + tower.tower_name)
+	is_placing_tower = true
 	update_ui()
+	
+	# Clear the placement flag after a short delay to prevent immediate selection
+	var timer = get_tree().create_timer(0.1)
+	timer.timeout.connect(_on_tower_placement_complete)
 
 func _on_tower_placement_failed(reason: String):
 	print("Tower placement failed: " + reason)
@@ -398,10 +648,16 @@ func _on_placement_mode_changed(is_active: bool):
 	if place_tower_button:
 		place_tower_button.button_pressed = is_active
 	is_in_tower_placement = is_active
-
-	# Reset cursor when exiting placement mode
+	
+	# Reset placement flag when exiting placement mode
 	if not is_active:
+		is_placing_tower = false
 		Input.set_default_cursor_shape(Input.CURSOR_ARROW)
+
+func _on_tower_placement_complete():
+	"""Called after tower placement is complete to allow selection again"""
+	is_placing_tower = false
+	print("Tower placement complete, selection enabled again")
 
 func _on_wave_started(wave_number: int):
 	print("Wave ", wave_number, " started!")
@@ -467,36 +723,58 @@ func show_victory_screen():
 	# Victory title
 	var title_label = Label.new()
 	title_label.text = "🏆 VICTORY! 🏆"
-	title_label.position = Vector2(panel_size.x / 2 - 100, 30)
+	title_label.position = Vector2(0, 30)
+	title_label.size = Vector2(panel_size.x, 50)
 	title_label.add_theme_font_size_override("font_size", 32)
-	title_label.add_theme_color_override("font_color", Color.GOLD)
+	title_label.add_theme_color_override("font_color", Color.WHITE)
+	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	victory_panel.add_child(title_label)
 
 	# Victory message
 	var message_label = Label.new()
 	message_label.text = "All waves successfully defended!\nThe hive is safe!"
-	message_label.position = Vector2(panel_size.x / 2 - 120, 100)
+	message_label.position = Vector2(0, 80)
+	message_label.size = Vector2(panel_size.x, 60)
 	message_label.add_theme_font_size_override("font_size", 18)
 	message_label.add_theme_color_override("font_color", Color.WHITE)
 	message_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	message_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	victory_panel.add_child(message_label)
 
 	# Statistics
 	var stats_label = Label.new()
 	var final_honey = GameManager.get_resource("honey")
-	stats_label.text = "Final Score:\nHoney Collected: " + str(final_honey) + "\nWaves Completed: 5/5"
-	stats_label.position = Vector2(panel_size.x / 2 - 80, 150)
+	stats_label.text = "Verbleibendes Leben:\nHealth: " + str(player_health) + "/20\nWaves Completed: 5/5"
+	stats_label.position = Vector2(0, 140)
+	stats_label.size = Vector2(panel_size.x, 60)
 	stats_label.add_theme_font_size_override("font_size", 16)
-	stats_label.add_theme_color_override("font_color", Color.YELLOW)
+	stats_label.add_theme_color_override("font_color", Color.WHITE)
 	stats_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	stats_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	victory_panel.add_child(stats_label)
 
 	# Return to menu button
 	var menu_button = Button.new()
 	menu_button.text = "Return to Main Menu"
 	menu_button.size = Vector2(200, 40)
-	menu_button.position = Vector2(panel_size.x / 2 - 100, 220)
-	menu_button.pressed.connect(_on_victory_menu_button_pressed)
+	menu_button.position = Vector2(panel_size.x / 2 - 100, 250)
+	
+	# Connect the button signal with error handling
+	if not menu_button.pressed.is_connected(_on_victory_menu_button_pressed):
+		menu_button.pressed.connect(_on_victory_menu_button_pressed)
+		print("Victory menu button connected successfully")
+	else:
+		print("Victory menu button already connected")
+	
+	# Connect alternative handler as backup
+	if not menu_button.pressed.is_connected(_on_victory_button_clicked):
+		menu_button.pressed.connect(_on_victory_button_clicked)
+		print("Victory button alternative handler connected")
+	
+	# Alternative: Use call_deferred to ensure the connection works
+	call_deferred("_connect_victory_button", menu_button)
+	
 	victory_panel.add_child(menu_button)
 
 	# Add to scene
@@ -508,15 +786,155 @@ func show_victory_screen():
 	start_wave_button.disabled = true
 	place_tower_button.disabled = true
 
-	# Pause the game
-	get_tree().paused = true
+	# Don't pause the game - this prevents UI from working
+	# get_tree().paused = true
 
 func _on_victory_menu_button_pressed():
-	# Unpause the game
-	get_tree().paused = false
-
+	print("Victory menu button pressed - returning to main menu")
+	
+	# Clean up victory screen
+	cleanup_victory_screen()
+	
 	# Return to main menu
 	SceneManager.goto_main_menu()
+
+func _on_victory_button_clicked():
+	# Alternative button handler
+	print("Victory button clicked - alternative handler")
+	_on_victory_menu_button_pressed()
+
+func cleanup_victory_screen():
+	# Remove victory overlay if it exists
+	var victory_overlay = $UI.get_node_or_null("VictoryOverlay")
+	if victory_overlay:
+		victory_overlay.queue_free()
+		print("Victory overlay cleaned up")
+
+func _connect_victory_button(button: Button):
+	# Ensure the button is properly connected
+	if button and not button.pressed.is_connected(_on_victory_menu_button_pressed):
+		button.pressed.connect(_on_victory_menu_button_pressed)
+		print("Victory button connected via deferred call")
+
+func show_game_over_screen():
+	# Create game over overlay
+	var game_over_overlay = ColorRect.new()
+	game_over_overlay.name = "GameOverOverlay"
+	game_over_overlay.color = Color(0, 0, 0, 0.8)  # Semi-transparent black
+	game_over_overlay.size = get_viewport().get_visible_rect().size
+	game_over_overlay.position = Vector2.ZERO
+	game_over_overlay.z_index = 100  # Ensure it's on top
+
+	# Create game over panel
+	var game_over_panel = Panel.new()
+	game_over_panel.name = "GameOverPanel"
+	var panel_size = Vector2(400, 300)
+	var window_size = get_viewport().get_visible_rect().size
+	game_over_panel.size = panel_size
+	game_over_panel.position = (window_size - panel_size) / 2  # Center the panel
+
+	# Style the panel
+	var panel_style = StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.4, 0.2, 0.2)  # Dark red
+	panel_style.border_width_left = 3
+	panel_style.border_width_right = 3
+	panel_style.border_width_top = 3
+	panel_style.border_width_bottom = 3
+	panel_style.border_color = Color.RED
+	panel_style.corner_radius_top_left = 10
+	panel_style.corner_radius_top_right = 10
+	panel_style.corner_radius_bottom_left = 10
+	panel_style.corner_radius_bottom_right = 10
+	game_over_panel.add_theme_stylebox_override("panel", panel_style)
+
+	# Game over title
+	var title_label = Label.new()
+	title_label.text = "💀 GAME OVER 💀"
+	title_label.position = Vector2(0, 30)
+	title_label.size = Vector2(panel_size.x, 50)
+	title_label.add_theme_font_size_override("font_size", 32)
+	title_label.add_theme_color_override("font_color", Color.WHITE)
+	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	game_over_panel.add_child(title_label)
+
+	# Game over message
+	var message_label = Label.new()
+	message_label.text = "The hive has been overrun!\nYour defenses have failed!"
+	message_label.position = Vector2(0, 80)
+	message_label.size = Vector2(panel_size.x, 60)
+	message_label.add_theme_font_size_override("font_size", 18)
+	message_label.add_theme_color_override("font_color", Color.WHITE)
+	message_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	message_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	game_over_panel.add_child(message_label)
+
+	# Statistics
+	var stats_label = Label.new()
+	var final_honey = GameManager.get_resource("honey")
+	stats_label.text = "Final Score:\nHoney Collected: " + str(final_honey) + "\nWaves Survived: " + str(current_wave - 1) + "/5"
+	stats_label.position = Vector2(0, 140)
+	stats_label.size = Vector2(panel_size.x, 60)
+	stats_label.add_theme_font_size_override("font_size", 16)
+	stats_label.add_theme_color_override("font_color", Color.WHITE)
+	stats_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	stats_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	game_over_panel.add_child(stats_label)
+
+	# Return to menu button
+	var menu_button = Button.new()
+	menu_button.text = "Return to Main Menu"
+	menu_button.size = Vector2(200, 40)
+	menu_button.position = Vector2(panel_size.x / 2 - 100, 250)
+	menu_button.pressed.connect(_on_game_over_menu_button_pressed)
+	game_over_panel.add_child(menu_button)
+
+	# Add to scene
+	game_over_overlay.add_child(game_over_panel)
+	var ui_canvas = $UI
+	ui_canvas.add_child(game_over_overlay)
+
+	# Disable game controls
+	start_wave_button.disabled = true
+	place_tower_button.disabled = true
+
+	# Don't pause the game - this prevents UI from working
+	# get_tree().paused = true
+
+func _on_game_over_menu_button_pressed():
+	print("Game over menu button pressed - returning to main menu")
+	
+	# Clean up game over screen
+	cleanup_game_over_screen()
+	
+	# Return to main menu
+	SceneManager.goto_main_menu()
+
+func reset_game_state():
+	"""Reset all game state to initial values for a new game"""
+	print("Resetting game state for new game")
+	
+	# Reset player stats
+	player_health = 20
+	current_wave = 1
+	
+	# Reset GameManager resources
+	GameManager.set_resource("honey", 100)
+	
+	# Reset speed mode
+	if speed_mode != 0:
+		speed_mode = 0
+		Engine.time_scale = 1.0
+		update_speed_button_text()
+	
+	print("Game state reset complete")
+
+func cleanup_game_over_screen():
+	# Remove game over overlay if it exists
+	var game_over_overlay = $UI.get_node_or_null("GameOverOverlay")
+	if game_over_overlay:
+		game_over_overlay.queue_free()
+		print("Game over overlay cleaned up")
 
 
 func setup_cursor_timer():
@@ -564,6 +982,26 @@ func setup_tower_type_ui():
 	# Initialize button text
 	update_tower_type_button_text()
 
+func setup_speed_button():
+	# Create speed button next to tower type button
+	speed_button = Button.new()
+	speed_button.name = "SpeedButton"
+	speed_button.size = Vector2(150, 40)
+
+	# Position it next to the tower type button
+	var tower_type_pos = tower_type_cycle_button.position
+	speed_button.position = Vector2(tower_type_pos.x + 220, tower_type_pos.y)
+
+	# Connect signal
+	if speed_button:
+		speed_button.pressed.connect(_on_speed_button_pressed)
+
+	# Add to same parent as tower type button
+	tower_type_cycle_button.get_parent().add_child(speed_button)
+	
+	# Initialize button text
+	update_speed_button_text()
+
 func _on_start_wave_button_mouse_entered():
 	if is_in_tower_placement:
 		is_hovering_ui = true
@@ -580,6 +1018,34 @@ func _on_cursor_timer_timeout():
 	if is_hovering_ui and is_in_tower_placement:
 		Input.set_default_cursor_shape(Input.CURSOR_ARROW)
 
+func _on_speed_button_pressed():
+	# Cycle through speed modes: 0 -> 1 -> 2 -> 0
+	speed_mode = (speed_mode + 1) % 3
+	apply_speed_mode()
+	update_speed_button_text()
+
+func apply_speed_mode():
+	match speed_mode:
+		0:  # Normal speed
+			Engine.time_scale = 1.0
+			print("Speed mode: Normal (1x)")
+		1:  # Double speed
+			Engine.time_scale = 2.0
+			print("Speed mode: Double (2x)")
+		2:  # Triple speed
+			Engine.time_scale = 3.0
+			print("Speed mode: Triple (3x)")
+
+func update_speed_button_text():
+	if speed_button:
+		match speed_mode:
+			0:
+				speed_button.text = HotkeyManager.get_action_display_text("speed_toggle") + " (1x)"
+			1:
+				speed_button.text = HotkeyManager.get_action_display_text("speed_toggle") + " (2x)"
+			2:
+				speed_button.text = HotkeyManager.get_action_display_text("speed_toggle") + " (3x)"
+
 func update_button_texts():
 	"""Update button texts with current hotkey assignments"""
 	if start_wave_button:
@@ -591,6 +1057,12 @@ func _on_hotkey_changed(action: String, old_key: int, new_key: int):
 	"""Update button texts when hotkeys change"""
 	print("Hotkey changed for ", action, " - updating button texts")
 	update_button_texts()
+
+func _on_resources_changed(resource_type: String, amount: int):
+	"""Handle resource changes to update UI immediately"""
+	if resource_type == "honey":
+		update_ui()
+		print("Honey changed by: %d (Total: %d)" % [amount, GameManager.get_resource("honey")])
 
 func get_tower_defense_data() -> Dictionary:
 	"""Get current tower defense scene data for saving"""
