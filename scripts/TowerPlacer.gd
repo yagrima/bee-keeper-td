@@ -267,7 +267,7 @@ func select_tower_at_position(screen_pos: Vector2):
 			return
 
 func show_tower_info(tower: Tower):
-	print("Selected tower: " + tower.get_tower_info())
+	print("Selected tower: ", tower.get_tower_info())
 	# TODO: Show tower upgrade UI
 
 func _on_tower_destroyed(tower: Tower):
