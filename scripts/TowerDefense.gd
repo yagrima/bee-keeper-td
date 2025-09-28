@@ -29,10 +29,23 @@ func _ready():
 	place_tower_button.pressed.connect(_on_place_tower_pressed)
 	back_button.pressed.connect(_on_back_pressed)
 
+	# Create a test visual first
+	create_test_visual()
+
 	setup_basic_map()
 	setup_tower_placer()
 	setup_wave_manager()
 	update_ui()
+
+func create_test_visual():
+	# Create a simple test rectangle that should definitely be visible
+	var test_rect = ColorRect.new()
+	test_rect.name = "TestVisual"
+	test_rect.size = Vector2(200, 200)
+	test_rect.position = Vector2(100, 100)
+	test_rect.color = Color.RED
+	add_child(test_rect)
+	print("Test visual created: RED rectangle at ", test_rect.position)
 
 func setup_basic_map():
 	# Create visual map using ColorRect nodes instead of TileMap for now
@@ -57,44 +70,35 @@ func create_simple_texture() -> ImageTexture:
 	return texture
 
 func create_visual_map():
-	# Create a visible background grid using ColorRect nodes
-	var map_background = Node2D.new()
+	# Create a single large background first
+	var map_background = ColorRect.new()
 	map_background.name = "MapBackground"
+	map_background.size = Vector2(640, 480)  # 20*32 x 15*32
+	map_background.position = Vector2(0, 0)
+	map_background.color = Color(0.2, 0.6, 0.2)  # Green grass
 	add_child(map_background)
 
-	# Create grass background
-	for x in range(20):
-		for y in range(15):
-			var grass_tile = ColorRect.new()
-			grass_tile.size = Vector2(32, 32)
-			grass_tile.position = Vector2(x * 32, y * 32)
-			grass_tile.color = Color(0.2, 0.6, 0.2)  # Green grass
-			map_background.add_child(grass_tile)
-
-	print("Visual map created with 20x15 grid")
+	print("Visual map created: ", map_background.size, " at ", map_background.position)
 
 func create_simple_path():
-	# Create visible path
-	var path_background = Node2D.new()
-	path_background.name = "PathBackground"
-	add_child(path_background)
+	# Create visible path as one large rectangle
+	var path_rect = ColorRect.new()
+	path_rect.name = "PathBackground"
+	path_rect.size = Vector2(640, 32)  # Full width, one tile height
+	path_rect.position = Vector2(0, 7 * 32)  # Row 7
+	path_rect.color = Color(0.6, 0.4, 0.2)  # Brown path
+	add_child(path_rect)
 
 	var path_points = []
 
-	# Horizontal path in the middle (row 7)
+	# Create path points for enemy movement
 	for x in range(20):
-		var path_tile = ColorRect.new()
-		path_tile.size = Vector2(32, 32)
-		path_tile.position = Vector2(x * 32, 7 * 32)
-		path_tile.color = Color(0.6, 0.4, 0.2)  # Brown path
-		path_background.add_child(path_tile)
-
-		# Store path points for enemy movement
 		path_points.append(Vector2(x * 32 + 16, 7 * 32 + 16))
 
 	# Store path for enemy movement
 	set_meta("path_points", path_points)
-	print("Path created with ", path_points.size(), " points")
+	print("Path created: ", path_rect.size, " at ", path_rect.position)
+	print("Path points: ", path_points.size(), " points from ", path_points[0], " to ", path_points[-1])
 
 func setup_wave_manager():
 	wave_manager = WaveManager.new()

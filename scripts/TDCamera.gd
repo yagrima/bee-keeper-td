@@ -10,12 +10,15 @@ var last_mouse_position: Vector2
 
 func _ready():
 	# Set initial zoom and position
-	zoom = Vector2(1.0, 1.0)
+	zoom = Vector2(0.8, 0.8)
 	position = Vector2(320, 240)  # Center on map
 
 	# Enable camera
 	enabled = true
 	make_current()
+
+	# Debug camera position
+	print("Camera initialized at position: ", position, " with zoom: ", zoom)
 
 func _input(event):
 	handle_zoom(event)
