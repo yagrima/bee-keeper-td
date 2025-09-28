@@ -58,36 +58,46 @@ func create_simple_texture() -> ImageTexture:
 	return texture
 
 func create_visual_map():
-	# Create map background in UI layer
+	# Create map background in UI layer, centered in window
 	var ui_canvas = $UI
+
+	# Calculate center position for 640x480 map in 1920x1080 window
+	var window_size = get_viewport().get_visible_rect().size
+	var map_size = Vector2(640, 480)  # 20*32 x 15*32
+	var center_offset = (window_size - map_size) / 2
 
 	# Create a single large background first
 	var map_background = ColorRect.new()
 	map_background.name = "MapBackground"
-	map_background.size = Vector2(640, 480)  # 20*32 x 15*32
-	map_background.position = Vector2(0, 0)
+	map_background.size = map_size
+	map_background.position = center_offset
 	map_background.color = Color(0.2, 0.6, 0.2)  # Green grass
 	map_background.z_index = -10  # Behind everything else
 	ui_canvas.add_child(map_background)
 
+	# Store map offset for tower placement
+	set_meta("map_offset", center_offset)
+
 	print("Visual map created in UI: ", map_background.size, " at ", map_background.position)
+	print("Map centered with offset: ", center_offset)
 
 func create_simple_path():
-	# Create path in UI layer
+	# Create path in UI layer, adjusted for centered map
 	var ui_canvas = $UI
+	var map_offset = get_meta("map_offset", Vector2.ZERO)
 
 	# Create visible path as one large rectangle
 	var path_rect = ColorRect.new()
 	path_rect.name = "PathBackground"
 	path_rect.size = Vector2(640, 32)  # Full width, one tile height
-	path_rect.position = Vector2(0, 7 * 32)  # Row 7
+	path_rect.position = Vector2(map_offset.x, map_offset.y + 7 * 32)  # Row 7, adjusted for center
 	path_rect.color = Color(0.6, 0.4, 0.2)  # Brown path
 	path_rect.z_index = -5  # Above map background but below other UI
 	ui_canvas.add_child(path_rect)
 
 	var path_points = []
 
-	# Create path points for enemy movement
+	# Create path points for enemy movement (world coordinates, not UI coordinates)
 	for x in range(20):
 		path_points.append(Vector2(x * 32 + 16, 7 * 32 + 16))
 

@@ -130,9 +130,16 @@ func update_placement_preview(screen_pos: Vector2):
 	if not placement_preview:
 		return
 
-	var world_pos = get_global_mouse_position()
-	var grid_pos = snap_to_grid(world_pos)
+	# Get mouse position relative to the map (accounting for map offset)
+	var mouse_pos = get_global_mouse_position()
+	var td_scene = get_parent()
+	var map_offset = td_scene.get_meta("map_offset", Vector2.ZERO)
 
+	# Convert from screen coordinates to map coordinates
+	var map_pos = mouse_pos - map_offset
+	var grid_pos = snap_to_grid(map_pos)
+
+	# Place preview at world position (without UI offset)
 	placement_preview.global_position = grid_pos
 
 	# Check if position is valid
@@ -166,8 +173,14 @@ func is_valid_placement_position(pos: Vector2) -> bool:
 	return true
 
 func attempt_tower_placement(screen_pos: Vector2):
-	var world_pos = get_global_mouse_position()
-	var grid_pos = snap_to_grid(world_pos)
+	# Get mouse position relative to the map (accounting for map offset)
+	var mouse_pos = get_global_mouse_position()
+	var td_scene = get_parent()
+	var map_offset = td_scene.get_meta("map_offset", Vector2.ZERO)
+
+	# Convert from screen coordinates to map coordinates
+	var map_pos = mouse_pos - map_offset
+	var grid_pos = snap_to_grid(map_pos)
 
 	if not is_valid_placement_position(grid_pos):
 		tower_placement_failed.emit("Invalid placement position")
@@ -213,10 +226,16 @@ func cleanup_preview():
 	range_preview = null
 
 func select_tower_at_position(screen_pos: Vector2):
-	var world_pos = get_global_mouse_position()
+	# Get mouse position relative to the map (accounting for map offset)
+	var mouse_pos = get_global_mouse_position()
+	var td_scene = get_parent()
+	var map_offset = td_scene.get_meta("map_offset", Vector2.ZERO)
+
+	# Convert from screen coordinates to map coordinates
+	var map_pos = mouse_pos - map_offset
 
 	for tower in placed_towers:
-		if tower.global_position.distance_to(world_pos) < grid_size:
+		if tower.global_position.distance_to(map_pos) < grid_size:
 			show_tower_info(tower)
 			return
 

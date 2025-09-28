@@ -9,9 +9,12 @@ var is_panning: bool = false
 var last_mouse_position: Vector2
 
 func _ready():
-	# Set initial zoom and position
-	zoom = Vector2(0.8, 0.8)
-	position = Vector2(320, 240)  # Center on map
+	# Set initial zoom and position to center of screen (where map will be)
+	zoom = Vector2(1.0, 1.0)
+
+	# Center camera on middle of window (where the centered map is)
+	var window_size = get_viewport().get_visible_rect().size
+	position = window_size / 2
 
 	# Enable camera
 	enabled = true
@@ -19,6 +22,7 @@ func _ready():
 
 	# Debug camera position
 	print("Camera initialized at position: ", position, " with zoom: ", zoom)
+	print("Window size: ", window_size)
 
 func _input(event):
 	handle_zoom(event)
