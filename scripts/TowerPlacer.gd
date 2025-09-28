@@ -146,16 +146,17 @@ func snap_to_grid(pos: Vector2) -> Vector2:
 	return Vector2(grid_x, grid_y)
 
 func is_valid_placement_position(pos: Vector2) -> bool:
-	if not build_layer:
+	# Simple grid-based validation for now
+	var grid_x = int(pos.x / grid_size)
+	var grid_y = int(pos.y / grid_size)
+
+	# Check bounds
+	if grid_x < 0 or grid_x >= 20 or grid_y < 0 or grid_y >= 15:
 		return false
 
-	# Convert world position to tile coordinates
-	var tile_pos = build_layer.local_to_map(build_layer.to_local(pos))
-
-	# Check if there's a buildable tile at this position
-	var tile_id = build_layer.get_cell_source_id(tile_pos)
-	if tile_id == -1:
-		return false  # No tile or path tile
+	# Don't allow building on the path (row 7)
+	if grid_y == 7:
+		return false
 
 	# Check if there's already a tower here
 	for tower in placed_towers:
