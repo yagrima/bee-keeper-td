@@ -194,12 +194,6 @@ func _on_all_waves_completed():
 	print("All waves completed! Victory!")
 	# TODO: Show victory screen
 
-func take_damage(damage: int):
-	player_health -= damage
-	update_ui()
-
-	if player_health <= 0:
-		game_over()
 
 func game_over():
 	print("Game Over!")

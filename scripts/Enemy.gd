@@ -1,5 +1,5 @@
 class_name Enemy
-extends CharacterBody2D
+extends Area2D
 
 signal enemy_died(enemy, reward)
 signal enemy_reached_end(enemy, damage)
@@ -57,7 +57,6 @@ var stun_duration: float = 0.0
 # Components
 @onready var visual: Node2D
 @onready var health_bar: ProgressBar
-@onready var collision_area: Area2D
 
 func _ready():
 	current_health = max_health
@@ -77,18 +76,16 @@ func setup_visual():
 	visual.add_child(sprite)
 
 func setup_collision():
-	collision_area = Area2D.new()
-	add_child(collision_area)
-
+	# Since we now extend Area2D directly, create collision shape for this node
 	var collision_shape = CollisionShape2D.new()
 	var rect_shape = RectangleShape2D.new()
 	rect_shape.size = Vector2(16, 16)
 	collision_shape.shape = rect_shape
-	collision_area.add_child(collision_shape)
+	add_child(collision_shape)
 
 	# Set collision layers for tower targeting
-	collision_area.collision_layer = 2  # Enemy layer
-	collision_area.collision_mask = 1   # Can be detected by towers
+	collision_layer = 2  # Enemy layer
+	collision_mask = 1   # Can be detected by towers
 
 func setup_health_bar():
 	health_bar = ProgressBar.new()
@@ -132,7 +129,7 @@ func get_enemy_color() -> Color:
 		_:
 			return Color.WHITE
 
-func _physics_process(delta):
+func _process(delta):
 	if current_state == EnemyState.DEAD:
 		return
 
