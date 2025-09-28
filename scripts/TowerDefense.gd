@@ -29,26 +29,11 @@ func _ready():
 	place_tower_button.pressed.connect(_on_place_tower_pressed)
 	back_button.pressed.connect(_on_back_pressed)
 
-	# Create a test visual first
-	create_test_visual()
-
 	setup_basic_map()
 	setup_tower_placer()
 	setup_wave_manager()
 	update_ui()
 
-func create_test_visual():
-	# Create visual elements in the UI layer instead of Node2D
-	var ui_canvas = $UI
-
-	# Create a simple test rectangle that should definitely be visible
-	var test_rect = ColorRect.new()
-	test_rect.name = "TestVisual"
-	test_rect.size = Vector2(200, 200)
-	test_rect.position = Vector2(100, 100)
-	test_rect.color = Color.RED
-	ui_canvas.add_child(test_rect)
-	print("Test visual created in UI: RED rectangle at ", test_rect.position)
 
 func setup_basic_map():
 	# Create visual map using ColorRect nodes instead of TileMap for now
