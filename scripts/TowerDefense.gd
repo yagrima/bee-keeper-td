@@ -1,0 +1,191 @@
+extends Node2D
+
+@onready var map = $Map
+@onready var path_layer = $Map/PathLayer
+@onready var build_layer = $Map/BuildLayer
+@onready var camera = $Camera2D
+
+@onready var honey_label = $UI/GameUI/TopBar/ResourceDisplay/HoneyLabel
+@onready var health_label = $UI/GameUI/TopBar/ResourceDisplay/HealthLabel
+@onready var wave_label = $UI/GameUI/TopBar/ResourceDisplay/WaveLabel
+@onready var start_wave_button = $UI/GameUI/Controls/StartWaveButton
+@onready var place_tower_button = $UI/GameUI/Controls/PlaceTowerButton
+@onready var back_button = $UI/GameUI/Controls/BackButton
+
+var current_wave: int = 1
+var player_health: int = 20
+var honey: int = 100
+
+# Tower placement
+var tower_placer: TowerPlacer
+
+# Wave management
+var wave_manager: WaveManager
+
+func _ready():
+	GameManager.change_game_state(GameManager.GameState.TOWER_DEFENSE)
+
+	start_wave_button.pressed.connect(_on_start_wave_pressed)
+	place_tower_button.pressed.connect(_on_place_tower_pressed)
+	back_button.pressed.connect(_on_back_pressed)
+
+	setup_basic_map()
+	setup_tower_placer()
+	setup_wave_manager()
+	update_ui()
+
+func setup_basic_map():
+	# Create a simple tileset programmatically for now
+	var tileset = TileSet.new()
+
+	# Create source for tiles
+	var source = TileSetAtlasSource.new()
+	source.texture = create_simple_texture()
+	source.texture_region_size = Vector2i(32, 32)
+
+	# Add tile variants
+	# Tile 0: Grass (buildable)
+	source.create_tile(Vector2i(0, 0))
+	var grass_tile = source.get_tile_data(Vector2i(0, 0), 0)
+
+	# Tile 1: Path
+	source.create_tile(Vector2i(1, 0))
+	var path_tile = source.get_tile_data(Vector2i(1, 0), 0)
+
+	tileset.add_source(source, 0)
+
+	map.tile_set = tileset
+	path_layer.tile_set = tileset
+	build_layer.tile_set = tileset
+
+	create_simple_level()
+
+func create_simple_texture() -> ImageTexture:
+	var image = Image.create(64, 32, false, Image.FORMAT_RGB8)
+
+	# Grass tile (green)
+	for x in range(32):
+		for y in range(32):
+			image.set_pixel(x, y, Color.GREEN)
+
+	# Path tile (brown)
+	for x in range(32, 64):
+		for y in range(32):
+			image.set_pixel(x, y, Color(0.6, 0.4, 0.2))
+
+	var texture = ImageTexture.new()
+	texture.set_image(image)
+	return texture
+
+func create_simple_level():
+	# Fill with grass (buildable areas)
+	for x in range(20):
+		for y in range(15):
+			build_layer.set_cell(Vector2i(x, y), 0, Vector2i(0, 0))
+
+	# Create a simple path from left to right
+	var path_points = []
+
+	# Horizontal path in the middle
+	for x in range(20):
+		var pos = Vector2i(x, 7)
+		path_layer.set_cell(pos, 0, Vector2i(1, 0))
+		build_layer.erase_cell(pos)  # Remove buildable area where path is
+		path_points.append(Vector2(pos.x * 32 + 16, pos.y * 32 + 16))
+
+	# Store path for enemy movement
+	set_meta("path_points", path_points)
+
+func setup_wave_manager():
+	wave_manager = WaveManager.new()
+	add_child(wave_manager)
+
+	# Set spawn point (start of path)
+	var path_points = get_meta("path_points", [])
+	if not path_points.is_empty():
+		wave_manager.set_spawn_point(path_points[0])
+		wave_manager.set_enemy_path(path_points)
+
+	# Connect signals
+	wave_manager.wave_started.connect(_on_wave_started)
+	wave_manager.wave_completed.connect(_on_wave_completed)
+	wave_manager.enemy_spawned.connect(_on_enemy_spawned)
+	wave_manager.all_waves_completed.connect(_on_all_waves_completed)
+
+func _on_start_wave_pressed():
+	if wave_manager.is_wave_in_progress():
+		print("Wave already in progress!")
+		return
+
+	wave_manager.start_wave(current_wave)
+	start_wave_button.disabled = true
+
+func _on_place_tower_pressed():
+	tower_placer.start_tower_placement("basic_shooter")
+
+func _on_back_pressed():
+	SceneManager.goto_main_menu()
+
+func update_ui():
+	honey_label.text = "Honey: " + str(GameManager.get_resource("honey"))
+	health_label.text = "Health: " + str(player_health)
+	wave_label.text = "Wave: " + str(current_wave)
+
+func add_honey(amount: int):
+	honey += amount
+	update_ui()
+
+func take_damage(amount: int):
+	player_health -= amount
+	update_ui()
+
+	if player_health <= 0:
+		game_over()
+
+func setup_tower_placer():
+	tower_placer = TowerPlacer.new()
+	add_child(tower_placer)
+
+	# Connect signals
+	tower_placer.tower_placed.connect(_on_tower_placed)
+	tower_placer.tower_placement_failed.connect(_on_tower_placement_failed)
+
+func _input(event):
+	if event is InputEventKey and event.pressed:
+		if event.keycode == KEY_T:
+			# Start placing basic shooter tower
+			tower_placer.start_tower_placement("basic_shooter")
+
+func _on_tower_placed(tower: Tower, position: Vector2):
+	print("Tower placed successfully: " + tower.tower_name)
+	update_ui()
+
+func _on_tower_placement_failed(reason: String):
+	print("Tower placement failed: " + reason)
+
+func _on_wave_started(wave_number: int):
+	print("Wave ", wave_number, " started!")
+
+func _on_wave_completed(wave_number: int, enemies_killed: int):
+	print("Wave ", wave_number, " completed! Killed ", enemies_killed, " enemies")
+	current_wave += 1
+	start_wave_button.disabled = false
+	update_ui()
+
+func _on_enemy_spawned(enemy: Enemy):
+	print("Enemy spawned: ", enemy.enemy_name)
+
+func _on_all_waves_completed():
+	print("All waves completed! Victory!")
+	# TODO: Show victory screen
+
+func take_damage(damage: int):
+	player_health -= damage
+	update_ui()
+
+	if player_health <= 0:
+		game_over()
+
+func game_over():
+	print("Game Over!")
+	# TODO: Show game over screen

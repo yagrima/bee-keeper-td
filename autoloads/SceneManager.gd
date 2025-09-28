@@ -32,5 +32,4 @@ func goto_settlement():
 
 func goto_tower_defense():
 	GameManager.change_game_state(GameManager.GameState.TOWER_DEFENSE)
-	# TODO: Load appropriate TD map
-	print("Tower Defense not implemented yet")
+	goto_scene("res://scenes/main/TowerDefense.tscn")
