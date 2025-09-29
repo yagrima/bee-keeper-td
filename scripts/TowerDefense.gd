@@ -422,13 +422,13 @@ func _input(event):
 	
 	# Use dynamic hotkey system
 	if HotkeyManager.is_hotkey_pressed(event, "place_stinger"):
-		create_tower_at_mouse_position("Basic Shooter Tower")
+		create_tower_at_mouse_position("Stinger Tower")
 	elif HotkeyManager.is_hotkey_pressed(event, "place_propolis_bomber"):
-		create_tower_at_mouse_position("Piercing Shooter Tower")
+		create_tower_at_mouse_position("Propolis Bomber Tower")
 	elif HotkeyManager.is_hotkey_pressed(event, "place_nectar_sprayer"):
-		create_tower_at_mouse_position("Basic Shooter Tower")
+		create_tower_at_mouse_position("Nectar Sprayer Tower")
 	elif HotkeyManager.is_hotkey_pressed(event, "place_lightning_flower"):
-		create_tower_at_mouse_position("Piercing Shooter Tower")
+		create_tower_at_mouse_position("Lightning Flower Tower")
 	elif HotkeyManager.is_hotkey_pressed(event, "place_tower"):
 		# Toggle tower placement mode with current tower
 		if is_in_tower_placement:
@@ -1273,10 +1273,14 @@ func place_tower_from_save(tower_info: Dictionary):
 	# Create tower instance
 	var tower_script = null
 	match tower_type:
-		"Basic Shooter":
-			tower_script = load("res://scripts/BasicShooterTower.gd")
-		"Piercing Shooter":
-			tower_script = load("res://scripts/PiercingTower.gd")
+		"stinger":
+			tower_script = load("res://scripts/StingerTower.gd")
+		"propolis_bomber":
+			tower_script = load("res://scripts/PropolisBomberTower.gd")
+		"nectar_sprayer":
+			tower_script = load("res://scripts/NectarSprayerTower.gd")
+		"lightning_flower":
+			tower_script = load("res://scripts/LightningFlowerTower.gd")
 		_:
 			print("Unknown tower type in save: ", tower_type)
 			return
@@ -1748,8 +1752,8 @@ func assign_random_towers_to_fields():
 	"""Assign random towers to each metaprogression field"""
 	print("Assigning random towers to metaprogression fields...")
 	
-	# Define the four basic tower types (using existing towers for now)
-	var tower_types = ["basic_shooter", "piercing_shooter", "basic_shooter", "piercing_shooter"]
+	# Define the four basic tower types
+	var tower_types = ["stinger", "propolis_bomber", "nectar_sprayer", "lightning_flower"]
 	
 	# Clear existing towers
 	metaprogression_towers.clear()
@@ -1786,12 +1790,18 @@ func create_metaprogression_tower(tower_type: String, world_pos: Vector2, field_
 	
 	# Create the appropriate tower instance directly
 	match tower_type:
-		"basic_shooter":
-			tower = BasicShooterTower.new()
-			tower_name = "Basic Shooter Tower"
-		"piercing_shooter":
-			tower = PiercingTower.new()
-			tower_name = "Piercing Shooter Tower"
+		"stinger":
+			tower = StingerTower.new()
+			tower_name = "Stinger Tower"
+		"propolis_bomber":
+			tower = PropolisBomberTower.new()
+			tower_name = "Propolis Bomber Tower"
+		"nectar_sprayer":
+			tower = NectarSprayerTower.new()
+			tower_name = "Nectar Sprayer Tower"
+		"lightning_flower":
+			tower = LightningFlowerTower.new()
+			tower_name = "Lightning Flower Tower"
 		_:
 			print("Unknown tower type: %s" % tower_type)
 			return null
@@ -2023,12 +2033,18 @@ func create_tower_at_position(tower_name: String, position: Vector2) -> Tower:
 	var tower_type: String
 	
 	# Determine tower type from name
-	if "Basic Shooter" in tower_name:
-		tower = BasicShooterTower.new()
-		tower_type = "basic_shooter"
-	elif "Piercing Shooter" in tower_name:
-		tower = PiercingTower.new()
-		tower_type = "piercing_shooter"
+	if "Stinger" in tower_name:
+		tower = StingerTower.new()
+		tower_type = "stinger"
+	elif "Propolis Bomber" in tower_name:
+		tower = PropolisBomberTower.new()
+		tower_type = "propolis_bomber"
+	elif "Nectar Sprayer" in tower_name:
+		tower = NectarSprayerTower.new()
+		tower_type = "nectar_sprayer"
+	elif "Lightning Flower" in tower_name:
+		tower = LightningFlowerTower.new()
+		tower_type = "lightning_flower"
 	else:
 		print("Unknown tower name: %s" % tower_name)
 		return null
@@ -2060,7 +2076,7 @@ func create_random_tower_at_mouse_position():
 	var mouse_pos = get_global_mouse_position()
 	
 	# Define available tower types
-	var tower_types = ["Basic Shooter Tower", "Piercing Shooter Tower"]
+	var tower_types = ["Stinger Tower", "Propolis Bomber Tower", "Nectar Sprayer Tower", "Lightning Flower Tower"]
 	var random_tower_name = tower_types[randi() % tower_types.size()]
 	
 	print("Creating random tower: %s at mouse position: %s" % [random_tower_name, mouse_pos])
