@@ -1743,8 +1743,8 @@ func create_metaprogression_field(grid_pos: Vector2, map_offset: Vector2, field_
 	# Create border for the field
 	create_field_border(field_background, world_pos)
 	
-	# Create field label
-	create_field_label(field_background, world_pos, field_number)
+	# Don't create field label - keeping fields clean
+	# create_field_label(field_background, world_pos, field_number)
 	
 	print("Metaprogression field %d created at %s (empty)" % [field_number, world_pos])
 
@@ -1773,11 +1773,15 @@ func assign_random_towers_to_fields():
 		var field_pos = Vector2(field_x, row_y)
 		var world_pos = Vector2(field_pos.x * 32, field_pos.y * 32) + map_offset
 		
-		# Create tower in field
-		var tower = create_metaprogression_tower(random_tower_type, world_pos, i + 1)
+		# Center the tower in the 2x2 field (64x64 pixels)
+		# Add 32 pixels to center it in the field
+		var centered_tower_pos = world_pos + Vector2(32, 32)
+		
+		# Create tower in field (centered)
+		var tower = create_metaprogression_tower(random_tower_type, centered_tower_pos, i + 1)
 		if tower:
 			metaprogression_towers.append(tower)
-			print("Field %d: Assigned %s tower" % [i + 1, random_tower_type])
+			print("Field %d: Assigned %s tower at centered position %s" % [i + 1, random_tower_type, centered_tower_pos])
 	
 	print("Random tower assignment complete!")
 
