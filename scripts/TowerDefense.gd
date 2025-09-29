@@ -1958,6 +1958,13 @@ func is_position_occupied(position: Vector2) -> bool:
 				if distance < 32:  # Within tower radius
 					return true
 	
+	# Check metaprogression towers
+	for tower in metaprogression_towers:
+		if tower and is_instance_valid(tower):
+			var distance = position.distance_to(tower.position)
+			if distance < 32:  # Within tower radius
+				return true
+	
 	return false
 
 func place_picked_up_tower(position: Vector2):
@@ -2173,6 +2180,10 @@ func set_current_tower_type(tower_type: String):
 	"""Set the current tower type for toggle behavior"""
 	print("Setting current_tower_type to: %s" % tower_type)
 	current_tower_type = tower_type
+
+func get_metaprogression_towers() -> Array:
+	"""Get all metaprogression towers for placement validation"""
+	return metaprogression_towers
 
 func cleanup_mouse_following_system():
 	"""Clean up any existing mouse following system"""

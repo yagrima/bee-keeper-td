@@ -252,6 +252,16 @@ func is_valid_placement_position(pos: Vector2) -> bool:
 	for tower in placed_towers:
 		if tower.global_position.distance_to(pos) < grid_size / 2:
 			return false
+	
+	# Check metaprogression towers from TowerDefense
+	var td_scene = get_parent()
+	if td_scene.has_method("get_metaprogression_towers"):
+		var metaprogression_towers = td_scene.get_metaprogression_towers()
+		for tower in metaprogression_towers:
+			if tower and is_instance_valid(tower):
+				var distance = tower.global_position.distance_to(pos)
+				if distance < grid_size / 2:
+					return false
 
 	return true
 
