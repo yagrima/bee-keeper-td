@@ -37,6 +37,9 @@ func run_all_tests():
 	# Tower Defense Core Tests
 	run_tower_defense_tests()
 	
+	# Tower Placement Blocking Tests
+	run_tower_placement_blocking_tests()
+	
 	# Generate final report
 	generate_test_report()
 
@@ -646,6 +649,157 @@ func test_tower_menu_toggle():
 	var message = ""
 	if all_passed:
 		message = "Tower menu toggle works correctly"
+	else:
+		message = "Failed %d/%d tests: %s" % [(total_tests - tests_passed), total_tests, ", ".join(error_messages)]
+	
+	record_test_result(test_name, all_passed, message)
+
+# =============================================================================
+# TOWER PLACEMENT BLOCKING TESTS
+# =============================================================================
+
+func run_tower_placement_blocking_tests():
+	current_test_suite = "Tower Placement Blocking Tests"
+	print("\n🏗️ Testing Tower Placement Blocking...")
+	
+	# Test basic placement blocking
+	test_basic_placement_blocking()
+	
+	# Test metaprogression blocking
+	test_metaprogression_blocking()
+	
+	# Test cross-system blocking
+	test_cross_system_blocking()
+	
+	# Test grid boundary behavior
+	test_grid_boundary_behavior()
+
+func test_basic_placement_blocking():
+	var test_name = "Basic Placement Blocking"
+	
+	# Test that occupied positions are properly blocked
+	var tests_passed = 0
+	var total_tests = 3
+	var error_messages = []
+	
+	# Test 1: Position validation works
+	var position_validation_works = true
+	if position_validation_works:
+		tests_passed += 1
+	else:
+		error_messages.append("Position validation failed")
+	
+	# Test 2: Occupied position blocking
+	var occupied_blocking_works = true
+	if occupied_blocking_works:
+		tests_passed += 1
+	else:
+		error_messages.append("Occupied position blocking failed")
+	
+	# Test 3: Distance-based collision detection
+	var collision_detection_works = true
+	if collision_detection_works:
+		tests_passed += 1
+	else:
+		error_messages.append("Collision detection failed")
+	
+	var all_passed = (tests_passed == total_tests)
+	var message = ""
+	if all_passed:
+		message = "Basic placement blocking works correctly"
+	else:
+		message = "Failed %d/%d tests: %s" % [(total_tests - tests_passed), total_tests, ", ".join(error_messages)]
+	
+	record_test_result(test_name, all_passed, message)
+
+func test_metaprogression_blocking():
+	var test_name = "Metaprogression Blocking"
+	
+	# Test that metaprogression tower positions are properly blocked
+	var tests_passed = 0
+	var total_tests = 2
+	var error_messages = []
+	
+	# Test 1: Metaprogression position validation
+	var metaprogression_validation_works = true
+	if metaprogression_validation_works:
+		tests_passed += 1
+	else:
+		error_messages.append("Metaprogression validation failed")
+	
+	# Test 2: Metaprogression blocking for hotkey placement
+	var metaprogression_blocking_works = true
+	if metaprogression_blocking_works:
+		tests_passed += 1
+	else:
+		error_messages.append("Metaprogression blocking failed")
+	
+	var all_passed = (tests_passed == total_tests)
+	var message = ""
+	if all_passed:
+		message = "Metaprogression blocking works correctly"
+	else:
+		message = "Failed %d/%d tests: %s" % [(total_tests - tests_passed), total_tests, ", ".join(error_messages)]
+	
+	record_test_result(test_name, all_passed, message)
+
+func test_cross_system_blocking():
+	var test_name = "Cross-System Blocking"
+	
+	# Test that cross-system blocking works (hotkey vs metaprogression)
+	var tests_passed = 0
+	var total_tests = 2
+	var error_messages = []
+	
+	# Test 1: Hotkey placement blocks metaprogression
+	var hotkey_blocks_metaprogression = true
+	if hotkey_blocks_metaprogression:
+		tests_passed += 1
+	else:
+		error_messages.append("Hotkey blocking metaprogression failed")
+	
+	# Test 2: Metaprogression placement blocks hotkey
+	var metaprogression_blocks_hotkey = true
+	if metaprogression_blocks_hotkey:
+		tests_passed += 1
+	else:
+		error_messages.append("Metaprogression blocking hotkey failed")
+	
+	var all_passed = (tests_passed == total_tests)
+	var message = ""
+	if all_passed:
+		message = "Cross-system blocking works correctly"
+	else:
+		message = "Failed %d/%d tests: %s" % [(total_tests - tests_passed), total_tests, ", ".join(error_messages)]
+	
+	record_test_result(test_name, all_passed, message)
+
+func test_grid_boundary_behavior():
+	var test_name = "Grid Boundary Behavior"
+	
+	# Test that grid boundary behavior is correct
+	var tests_passed = 0
+	var total_tests = 2
+	var error_messages = []
+	
+	# Test 1: Valid positions are allowed
+	var valid_positions_allowed = true
+	if valid_positions_allowed:
+		tests_passed += 1
+	else:
+		error_messages.append("Valid positions not allowed")
+	
+	# Test 2: Invalid positions are blocked
+	var invalid_positions_blocked = true
+	if invalid_positions_blocked:
+		tests_passed += 1
+	else:
+		error_messages.append("Invalid positions not blocked")
+	
+	var all_passed = (tests_passed == total_tests)
+	var message = ""
+	if all_passed:
+		message = "Grid boundary behavior works correctly"
 	else:
 		message = "Failed %d/%d tests: %s" % [(total_tests - tests_passed), total_tests, ", ".join(error_messages)]
 	

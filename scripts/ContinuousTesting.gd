@@ -15,6 +15,7 @@ var test_on_speed_change: bool = true
 var test_on_tower_placement: bool = true
 var test_on_wave_start: bool = true
 var test_on_save_load: bool = true
+var test_on_tower_placement_blocking: bool = true
 
 func _ready():
 	# Initialize test runner
@@ -221,6 +222,37 @@ func run_performance_tests():
 	"""Run performance-focused tests"""
 	print("⚡ Running performance tests...")
 	test_runner.run_performance_tests()
+
+func start_tower_placement_blocking_test():
+	"""Start the continuous tower placement blocking test"""
+	print("🏗️ Starting tower placement blocking test...")
+	
+	# Create and start the blocking test
+	var blocking_test = preload("res://scripts/TowerPlacementBlockingTest.gd").new()
+	add_child(blocking_test)
+	
+	# Start the test
+	var success = blocking_test.start_test()
+	if success:
+		print("✅ Tower placement blocking test started successfully")
+	else:
+		print("❌ Failed to start tower placement blocking test")
+	
+	return success
+
+func stop_tower_placement_blocking_test():
+	"""Stop the continuous tower placement blocking test"""
+	print("🛑 Stopping tower placement blocking test...")
+	
+	# Find and stop the blocking test
+	var blocking_test = get_node_or_null("TowerPlacementBlockingTest")
+	if blocking_test:
+		blocking_test.stop_test()
+		blocking_test.cleanup_test()
+		blocking_test.queue_free()
+		print("✅ Tower placement blocking test stopped")
+	else:
+		print("⚠️ No tower placement blocking test found to stop")
 
 # =============================================================================
 # TEST REPORTING
