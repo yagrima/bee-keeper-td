@@ -9,6 +9,7 @@ extends Node2D
 @onready var health_label = $UI/GameUI/TopBar/ResourceDisplay/HealthLabel
 @onready var wave_label = $UI/GameUI/TopBar/ResourceDisplay/WaveLabel
 @onready var wave_composition_label: Label
+@onready var wave_countdown_label: Label
 @onready var start_wave_button = $UI/GameUI/Controls/StartWaveButton
 @onready var place_tower_button = $UI/GameUI/Controls/PlaceTowerButton
 @onready var back_button = $UI/GameUI/Controls/BackButton
@@ -43,6 +44,10 @@ var selected_tower: Tower = null
 var range_indicator: Node2D = null
 var is_placing_tower: bool = false
 
+# Wave countdown timer
+var wave_countdown_timer: Timer
+var countdown_seconds: float = 0.0
+
 func _ready():
 	GameManager.change_game_state(GameManager.GameState.TOWER_DEFENSE)
 
@@ -76,6 +81,7 @@ func _ready():
 	setup_wave_manager()
 	setup_cursor_timer()
 	setup_wave_composition_ui()
+	setup_wave_countdown_ui()
 	setup_individual_tower_buttons()
 	setup_speed_button()
 	setup_metaprogression_fields()
@@ -321,7 +327,7 @@ func _on_start_wave_pressed():
 	# Clear tower selection when starting wave
 	clear_tower_selection()
 	
-	# Stop any existing auto wave timer
+	# Stop any existing auto wave timer and countdown
 	stop_auto_wave_timer()
 
 	wave_manager.start_wave(current_wave)
@@ -985,6 +991,31 @@ func setup_wave_composition_ui():
 	# Add to UI layer
 	var ui_canvas = $UI
 	ui_canvas.add_child(wave_composition_label)
+
+func setup_wave_countdown_ui():
+	"""Setup wave countdown timer display"""
+	# Create wave countdown label
+	wave_countdown_label = Label.new()
+	wave_countdown_label.name = "WaveCountdownLabel"
+	
+	# Position it below the wave composition label
+	wave_countdown_label.position = Vector2(20, 90)  # Below wave composition
+	wave_countdown_label.add_theme_font_size_override("font_size", 12)
+	wave_countdown_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.0))  # Orange/yellow for countdown
+	wave_countdown_label.text = ""
+	wave_countdown_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	wave_countdown_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	
+	# Add to UI layer
+	var ui_canvas = $UI
+	ui_canvas.add_child(wave_countdown_label)
+	
+	# Create countdown timer
+	wave_countdown_timer = Timer.new()
+	wave_countdown_timer.name = "WaveCountdownTimer"
+	wave_countdown_timer.wait_time = 1.0  # Update every second
+	wave_countdown_timer.timeout.connect(_on_wave_countdown_timer_timeout)
+	add_child(wave_countdown_timer)
 
 func setup_individual_tower_buttons():
 	# Create four individual tower buttons
@@ -1755,6 +1786,10 @@ func start_automatic_next_wave():
 	
 	print("Starting automatic next wave in %.1f seconds (speed mode: %d)" % [delay_seconds, speed_mode])
 	
+	# Set countdown and start visual countdown
+	countdown_seconds = delay_seconds
+	start_wave_countdown_display()
+	
 	# Create and start timer for automatic wave start
 	var timer = Timer.new()
 	timer.name = "AutoWaveTimer"
@@ -1783,6 +1818,9 @@ func _on_auto_wave_timer_timeout():
 	"""Called when the automatic wave timer expires"""
 	print("Auto wave timer expired - starting next wave")
 	
+	# Stop countdown display
+	stop_wave_countdown_display()
+	
 	# Clean up the timer
 	var timer = get_node("AutoWaveTimer")
 	if timer:
@@ -1805,3 +1843,45 @@ func stop_auto_wave_timer():
 	if timer:
 		timer.queue_free()
 		print("Auto wave timer stopped")
+	
+	# Stop countdown display
+	stop_wave_countdown_display()
+
+# =============================================================================
+# WAVE COUNTDOWN DISPLAY SYSTEM
+# =============================================================================
+
+func start_wave_countdown_display():
+	"""Start the visual countdown display"""
+	if wave_countdown_timer:
+		wave_countdown_timer.start()
+		update_countdown_display()
+
+func stop_wave_countdown_display():
+	"""Stop the visual countdown display"""
+	if wave_countdown_timer:
+		wave_countdown_timer.stop()
+	
+	if wave_countdown_label:
+		wave_countdown_label.text = ""
+
+func _on_wave_countdown_timer_timeout():
+	"""Update countdown display every second"""
+	if countdown_seconds > 0:
+		countdown_seconds -= 1.0
+		update_countdown_display()
+	else:
+		stop_wave_countdown_display()
+
+func update_countdown_display():
+	"""Update the countdown display text"""
+	if wave_countdown_label and countdown_seconds > 0:
+		var minutes = int(countdown_seconds) / 60
+		var seconds = int(countdown_seconds) % 60
+		
+		if minutes > 0:
+			wave_countdown_label.text = "Next wave in %d:%02d" % [minutes, seconds]
+		else:
+			wave_countdown_label.text = "Next wave in %d seconds" % [int(countdown_seconds)]
+	elif wave_countdown_label:
+		wave_countdown_label.text = ""
