@@ -1905,6 +1905,11 @@ func pickup_metaprogression_tower(tower: Tower):
 	picked_up_tower.set_meta("original_parent", tower.get_parent())
 	picked_up_tower.set_meta("original_field_number", tower.get_meta("field_number", -1))
 	
+	# CRITICAL: Temporarily remove from metaprogression_towers to allow placement
+	# It will be re-added if placement fails, or permanently removed if successful
+	metaprogression_towers.erase(picked_up_tower)
+	print("Tower temporarily removed from metaprogression_towers (count: %d)" % metaprogression_towers.size())
+	
 	# Move tower to follow mouse (keep it visible)
 	picked_up_tower.z_index = 100  # Above everything
 	
@@ -2105,9 +2110,12 @@ func place_picked_up_tower(position: Vector2):
 	else:
 		print("WARNING: tower_placer is null!")
 	
-	# Remove from metaprogression towers
-	metaprogression_towers.erase(picked_up_tower)
-	print("Tower removed from metaprogression_towers (remaining: %d)" % metaprogression_towers.size())
+	# Tower was already removed from metaprogression_towers during pickup
+	# Just confirm it's not in the list
+	if picked_up_tower in metaprogression_towers:
+		metaprogression_towers.erase(picked_up_tower)
+		print("WARNING: Tower was still in metaprogression_towers, removed it")
+	print("Tower placement confirmed, metaprogression_towers count: %d" % metaprogression_towers.size())
 	
 	# Clear picked up tower
 	picked_up_tower = null
