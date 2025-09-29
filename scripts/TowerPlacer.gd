@@ -145,7 +145,10 @@ func create_placement_preview():
 	# Create range preview
 	create_range_preview()
 
-	print("Tower placement preview created in UI layer")
+	# IMMEDIATELY position at mouse cursor
+	update_placement_preview(get_global_mouse_position())
+
+	print("Tower placement preview created in UI layer and positioned at mouse")
 
 func create_range_preview():
 	if not show_range_preview:
@@ -181,8 +184,8 @@ func update_placement_preview(screen_pos: Vector2):
 	if not placement_preview:
 		return
 
-	# Get mouse position (UI coordinates)
-	var mouse_pos = get_global_mouse_position()
+	# Use the provided screen position or get current mouse position
+	var mouse_pos = screen_pos if screen_pos != Vector2.ZERO else get_global_mouse_position()
 	var td_scene = get_parent()
 	var map_offset = td_scene.get_meta("map_offset", Vector2.ZERO)
 
@@ -193,6 +196,8 @@ func update_placement_preview(screen_pos: Vector2):
 	# Place preview at UI position (with map offset)
 	var ui_pos = grid_pos + map_offset
 	placement_preview.global_position = ui_pos
+	
+	print("Preview positioned at: mouse=%s, map=%s, grid=%s, ui=%s" % [mouse_pos, map_pos, grid_pos, ui_pos])
 
 	# Check if position is valid and if we have enough honey
 	var is_valid_position = is_valid_placement_position(grid_pos)
