@@ -347,17 +347,25 @@ func create_stinger_visual():
 	visual.add_child(rect)
 
 func create_propolis_visual():
-	# Large, brown, explosive-looking projectile
+	# Large, brown, explosive-looking projectile (Propolis: dark amber/brown like natural bee resin)
 	if visual:
 		visual.queue_free()
 	visual = Node2D.new()
 	add_child(visual)
 
+	# Larger projectile for area effect (splash damage)
 	var rect = ColorRect.new()
-	rect.size = Vector2(12, 8)
-	rect.position = Vector2(-6, -4)
-	rect.color = Color(0.4, 0.2, 0.0)  # Dark brown
+	rect.size = Vector2(16, 12)  # Increased from 12x8 to show area effect
+	rect.position = Vector2(-8, -6)
+	rect.color = Color(0.55, 0.3, 0.05)  # Natural propolis color: dark amber/reddish-brown
 	visual.add_child(rect)
+	
+	# Add inner glow effect to show explosive nature
+	var inner = ColorRect.new()
+	inner.size = Vector2(8, 6)
+	inner.position = Vector2(-4, -3)
+	inner.color = Color(0.7, 0.45, 0.1, 0.6)  # Lighter amber center (semi-transparent)
+	visual.add_child(inner)
 
 func create_nectar_visual():
 	# Golden, stream-like projectile
