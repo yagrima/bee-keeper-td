@@ -422,13 +422,13 @@ func _input(event):
 	
 	# Use dynamic hotkey system
 	if HotkeyManager.is_hotkey_pressed(event, "place_stinger"):
-		create_tower_at_mouse_position("Stinger Tower")
+		create_tower_at_mouse_position("Basic Shooter Tower")
 	elif HotkeyManager.is_hotkey_pressed(event, "place_propolis_bomber"):
-		create_tower_at_mouse_position("Propolis Bomber Tower")
+		create_tower_at_mouse_position("Piercing Shooter Tower")
 	elif HotkeyManager.is_hotkey_pressed(event, "place_nectar_sprayer"):
-		create_tower_at_mouse_position("Nectar Sprayer Tower")
+		create_tower_at_mouse_position("Basic Shooter Tower")
 	elif HotkeyManager.is_hotkey_pressed(event, "place_lightning_flower"):
-		create_tower_at_mouse_position("Lightning Flower Tower")
+		create_tower_at_mouse_position("Piercing Shooter Tower")
 	elif HotkeyManager.is_hotkey_pressed(event, "place_tower"):
 		# Toggle tower placement mode with current tower
 		if is_in_tower_placement:
