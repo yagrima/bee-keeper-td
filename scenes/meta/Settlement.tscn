@@ -16,7 +16,23 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0.2, 0.4, 0.2, 1)
+color = Color(0.15, 0.15, 0.2, 1)
+
+[node name="SettlementArea" type="ColorRect" parent="UI"]
+custom_minimum_size = Vector2(640, 480)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -320.0
+offset_top = -240.0
+offset_right = 320.0
+offset_bottom = 240.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.25, 0.35, 0.25, 1)
 
 [node name="Header" type="HBoxContainer" parent="UI"]
 layout_mode = 1
@@ -44,31 +60,84 @@ offset_bottom = 60.0
 text = "Settlement"
 horizontal_alignment = 1
 
-[node name="BuildingSpots" type="GridContainer" parent="UI"]
+[node name="BuildingContainer" type="Control" parent="UI"]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -200.0
-offset_top = -150.0
-offset_right = 200.0
-offset_bottom = 150.0
-columns = 2
+offset_left = -320.0
+offset_top = -240.0
+offset_right = 320.0
+offset_bottom = 240.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="HiveSpot" type="Button" parent="UI/BuildingSpots"]
-layout_mode = 2
+[node name="HiveSpot" type="ColorRect" parent="UI/BuildingContainer"]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 40.0
+offset_right = 280.0
+offset_bottom = 200.0
+color = Color(0.8, 0.6, 0.2, 1)
+
+[node name="HiveButton" type="Button" parent="UI/BuildingContainer/HiveSpot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 text = "The Hive"
 
-[node name="WorkshopSpot" type="Button" parent="UI/BuildingSpots"]
-layout_mode = 2
+[node name="WorkshopSpot" type="ColorRect" parent="UI/BuildingContainer"]
+layout_mode = 0
+offset_left = 360.0
+offset_top = 40.0
+offset_right = 600.0
+offset_bottom = 200.0
+color = Color(0.5, 0.35, 0.2, 1)
+
+[node name="WorkshopButton" type="Button" parent="UI/BuildingContainer/WorkshopSpot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 text = "Workshop"
 
-[node name="PortSpot" type="Button" parent="UI/BuildingSpots"]
-layout_mode = 2
+[node name="PortSpot" type="ColorRect" parent="UI/BuildingContainer"]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 280.0
+offset_right = 280.0
+offset_bottom = 440.0
+color = Color(0.2, 0.4, 0.6, 1)
+
+[node name="PortButton" type="Button" parent="UI/BuildingContainer/PortSpot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 text = "The Port"
 
-[node name="BarracksSpot" type="Button" parent="UI/BuildingSpots"]
-layout_mode = 2
+[node name="BarracksSpot" type="ColorRect" parent="UI/BuildingContainer"]
+layout_mode = 0
+offset_left = 360.0
+offset_top = 280.0
+offset_right = 600.0
+offset_bottom = 440.0
+color = Color(0.6, 0.2, 0.2, 1)
+
+[node name="BarracksButton" type="Button" parent="UI/BuildingContainer/BarracksSpot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 text = "Barracks"

@@ -1,23 +1,23 @@
 extends Control
 
 @onready var back_button = $UI/Header/BackButton
-@onready var hive_spot = $UI/BuildingSpots/HiveSpot
-@onready var workshop_spot = $UI/BuildingSpots/WorkshopSpot
-@onready var port_spot = $UI/BuildingSpots/PortSpot
-@onready var barracks_spot = $UI/BuildingSpots/BarracksSpot
+@onready var hive_button = $UI/BuildingContainer/HiveSpot/HiveButton
+@onready var workshop_button = $UI/BuildingContainer/WorkshopSpot/WorkshopButton
+@onready var port_button = $UI/BuildingContainer/PortSpot/PortButton
+@onready var barracks_button = $UI/BuildingContainer/BarracksSpot/BarracksButton
 
 func _ready():
 	# Connect button signals with null checks
 	if back_button:
 		back_button.pressed.connect(_on_back_pressed)
-	if hive_spot:
-		hive_spot.pressed.connect(_on_hive_pressed)
-	if workshop_spot:
-		workshop_spot.pressed.connect(_on_workshop_pressed)
-	if port_spot:
-		port_spot.pressed.connect(_on_port_pressed)
-	if barracks_spot:
-		barracks_spot.pressed.connect(_on_barracks_pressed)
+	if hive_button:
+		hive_button.pressed.connect(_on_hive_pressed)
+	if workshop_button:
+		workshop_button.pressed.connect(_on_workshop_pressed)
+	if port_button:
+		port_button.pressed.connect(_on_port_pressed)
+	if barracks_button:
+		barracks_button.pressed.connect(_on_barracks_pressed)
 
 func _on_back_pressed():
 	SceneManager.goto_main_menu()
