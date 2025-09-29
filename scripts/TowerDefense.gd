@@ -1862,8 +1862,16 @@ func pickup_metaprogression_tower(tower: Tower):
 	
 	# Position tower at mouse position immediately
 	var mouse_pos = get_global_mouse_position()
-	tower.global_position = mouse_pos
-	print("Tower positioned at: %s" % tower.global_position)
+	
+	# Convert mouse position to UI canvas coordinates
+	var ui_canvas = $UI
+	var local_mouse_pos = ui_canvas.to_local(mouse_pos)
+	tower.position = local_mouse_pos
+	
+	print("Mouse position: %s" % mouse_pos)
+	print("UI local position: %s" % local_mouse_pos)
+	print("Tower positioned at: %s" % tower.position)
+	print("Tower global position: %s" % tower.global_position)
 	
 	# Show range indicator at mouse position
 	show_tower_range_at_mouse_position(tower)
@@ -2031,14 +2039,18 @@ func _process(delta):
 	"""Update picked up tower position to follow mouse"""
 	if picked_up_tower != null and is_instance_valid(picked_up_tower):
 		var mouse_pos = get_global_mouse_position()
-		var old_pos = picked_up_tower.global_position
+		var old_pos = picked_up_tower.position
+		
+		# Convert mouse position to UI canvas coordinates
+		var ui_canvas = $UI
+		var local_mouse_pos = ui_canvas.to_local(mouse_pos)
 		
 		# Update tower position to mouse position
-		picked_up_tower.global_position = mouse_pos
+		picked_up_tower.position = local_mouse_pos
 		
 		# Debug: Print position changes
-		if old_pos != mouse_pos:
-			print("Tower moved from %s to %s" % [old_pos, mouse_pos])
+		if old_pos != local_mouse_pos:
+			print("Tower moved from %s to %s" % [old_pos, local_mouse_pos])
 		
 		# Update range indicator position as well
 		if range_indicator != null and is_instance_valid(range_indicator):
@@ -2076,12 +2088,14 @@ func show_tower_range_at_mouse_position(tower: Tower):
 	var range_circle = create_round_range_indicator(tower.range)
 	range_indicator.add_child(range_circle)
 	
-	# Position at mouse position
-	range_indicator.global_position = get_global_mouse_position()
+	# Position at mouse position (convert to UI canvas coordinates)
+	var ui_canvas = $UI
+	var mouse_pos = get_global_mouse_position()
+	var local_mouse_pos = ui_canvas.to_local(mouse_pos)
+	range_indicator.position = local_mouse_pos
 	range_indicator.z_index = 5  # Ensure visibility
 	
 	# Add to scene
-	var ui_canvas = $UI
 	ui_canvas.add_child(range_indicator)
 	
 	print("Range indicator created: ", range_indicator.name, " at mouse position: ", range_indicator.global_position, " with range: ", tower.range)
