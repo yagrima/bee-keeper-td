@@ -4,7 +4,6 @@ extends Control
 @onready var td_button = $UI/MenuContainer/TDButton
 @onready var settlement_button = $UI/MenuContainer/SettlementButton
 @onready var logout_button = $UI/MenuContainer/LogoutButton
-@onready var quit_button = $UI/MenuContainer/QuitButton
 
 # =============================================================================
 # TESTING REMINDER SYSTEM
@@ -67,8 +66,6 @@ func _ready():
 		settlement_button.pressed.connect(_on_settlement_pressed)
 	if logout_button:
 		logout_button.pressed.connect(_on_logout_pressed)
-	if quit_button:
-		quit_button.pressed.connect(_on_quit_pressed)
 
 	# Check authentication status
 	_check_auth_status()
@@ -94,9 +91,6 @@ func _on_logout_pressed():
 	print("👋 Logging out...")
 	SupabaseClient.logout()
 	SceneManager.goto_auth()
-
-func _on_quit_pressed():
-	get_tree().quit()
 
 func _check_auth_status():
 	"""Check if user is authenticated, redirect to login if not"""
