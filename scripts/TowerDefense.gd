@@ -2074,20 +2074,27 @@ func place_picked_up_tower(position: Vector2):
 	
 	# Get current parent
 	var current_parent = picked_up_tower.get_parent()
+	var ui_canvas = $UI
 	
-	# Move tower from current parent to main scene for proper placement
-	if current_parent:
+	# Move tower to UI canvas (same as hotkey towers)
+	if current_parent and current_parent != ui_canvas:
 		current_parent.remove_child(picked_up_tower)
 		print("Removed tower from parent: %s" % current_parent.name)
 	
-	add_child(picked_up_tower)
-	print("Added tower to main scene")
+	# Add to UI canvas if not already there
+	if picked_up_tower.get_parent() != ui_canvas:
+		ui_canvas.add_child(picked_up_tower)
+		print("Added tower to UI canvas")
+	else:
+		print("Tower already in UI canvas")
 	
-	# Reset z_index for main scene placement
+	# Reset z_index for proper placement
 	picked_up_tower.z_index = 0
 	
-	# Set tower position to aligned map position (without offset, since it's in main scene now)
-	picked_up_tower.global_position = aligned_map_position
+	# Set tower position to aligned map position + offset (UI coordinates)
+	var aligned_ui_position = aligned_map_position + map_offset
+	picked_up_tower.global_position = aligned_ui_position
+	print("Aligned UI position: %s" % aligned_ui_position)
 	
 	# Make tower visible
 	picked_up_tower.visible = true
