@@ -103,7 +103,119 @@
 
 ---
 
-### **Phase 5: Metaprogression Expansion** 🔄 **IN PROGRESS** (Starting 2024-12-30)
+### **Phase 5: Web App & Session System** 🔄 **IN PROGRESS** (Starting 2024-12-30)
+
+#### **Objectives**
+- Implement account-based session tracking
+- Setup cloud backend for save data
+- Prepare for web deployment
+- Establish foundation for cross-device progression
+
+#### **Planned Deliverables**
+
+##### **Sprint 1: Backend Setup (3-5 days)** 📋
+- 📋 **Supabase Setup**:
+  - Create Supabase project
+  - Configure database schema (users, sessions, save_data)
+  - Setup authentication (Email + Password)
+  - Configure Row Level Security (RLS)
+  
+- 📋 **Database Schema**:
+  ```sql
+  -- users: id, email, password_hash, username, created_at
+  -- sessions: id, user_id, token, expires_at, created_at
+  -- save_data: id, user_id, data (JSONB), version, updated_at
+  ```
+  
+- 📋 **API Testing**:
+  - Test register endpoint
+  - Test login endpoint
+  - Test save/load endpoints
+  - Test session refresh
+
+##### **Sprint 2: Frontend Integration (3-5 days)** 🔄
+- 🔄 **SupabaseClient Autoload**:
+  - HTTP request wrapper
+  - Auth flow (register, login, logout)
+  - Session management
+  - Token refresh mechanism
+  
+- 🔄 **Login/Register UI**:
+  - Main menu authentication screen
+  - Registration form (email, username, password)
+  - Login form (email, password)
+  - "Remember Me" functionality
+  - Error handling and user feedback
+  
+- 🔄 **SessionManager Integration**:
+  - Store current session in GameManager
+  - Persist auth token locally (encrypted)
+  - Auto-login on app start
+  - Session expiration handling
+
+##### **Sprint 3: Cloud Save Integration (2-3 days)** 📋
+- 📋 **SaveManager Extension**:
+  - Extend existing SaveManager for cloud sync
+  - Implement upload_save() function
+  - Implement download_save() function
+  - Implement sync_save() with conflict resolution
+  
+- 📋 **Conflict Resolution**:
+  - Timestamp-based conflict detection
+  - User choice dialog (local vs. cloud)
+  - Automatic merge strategy (newest wins)
+  - Backup mechanism
+  
+- 📋 **Offline Support**:
+  - LocalStorage fallback for offline play
+  - Queue sync operations
+  - Auto-sync on reconnect
+  - Sync status indicator
+
+##### **Sprint 4: Polish & Testing (2-3 days)** 📋
+- 📋 **UX Improvements**:
+  - Loading states for all API calls
+  - Error messages (network, auth, validation)
+  - Success notifications
+  - Session timeout warnings
+  
+- 📋 **Security**:
+  - HTTPS enforcement
+  - Token encryption in storage
+  - Input validation
+  - Rate limiting handling
+  
+- 📋 **Testing**:
+  - Auth flow testing
+  - Save/load testing
+  - Conflict resolution testing
+  - Offline mode testing
+
+##### **Sprint 5: Web Export & Deployment (2-3 days)** 📋
+- 📋 **Godot Web Export**:
+  - Configure export settings
+  - Test web build locally
+  - Optimize asset loading
+  - Test browser compatibility
+  
+- 📋 **Hosting Setup**:
+  - Setup Netlify/Vercel project
+  - Configure custom domain (optional)
+  - Setup CDN for assets
+  - Configure CORS
+  
+- 📋 **Production Deployment**:
+  - Deploy to staging environment
+  - Test production build
+  - Deploy to production
+  - Setup monitoring
+
+#### **Time Estimate**: 2-3 weeks  
+#### **Complexity**: Very High
+
+---
+
+### **Phase 6: Metaprogression Expansion** 📋 **PLANNED** (2025-01-20+)
 
 #### **Objectives**
 - Expand metaprogression system
@@ -111,14 +223,14 @@
 - Add tower persistence and upgrades
 
 #### **Planned Deliverables**
-- 🔄 **Settlement System**:
-  - Settlement UI/Scene
+- 📋 **Settlement System**:
+  - Settlement UI/Scene (640x480 area, 4 buildings)
   - Resource display (Honey, Pollen, Wax)
-  - Building system
+  - Building interaction system
   - Unlock system
   
 - 📋 **Tower Persistence**:
-  - Save towers between runs
+  - Save towers between runs (cloud-synced)
   - Load towers into metaprogression fields
   - Tower level persistence
   - Tower upgrade state persistence
@@ -146,7 +258,7 @@
 
 ---
 
-### **Phase 6: Polish & Content** 📋 **PLANNED** (2025-01-30+)
+### **Phase 7: Polish & Content** 📋 **PLANNED** (2025-02-15+)
 
 #### **Objectives**
 - Add visual and audio polish
@@ -263,7 +375,86 @@
 GameManager.gd      - Game state, resources
 SceneManager.gd     - Scene transitions
 HotkeyManager.gd    - Input configuration
-SaveManager.gd      - Save/load system (planned)
+SaveManager.gd      - Save/load system
+SupabaseClient.gd   - Cloud backend integration (planned)
+```
+
+#### **Web App Architecture** 🌐
+
+##### **Frontend (Godot Web Export)**
+```
+Main.gd                    - Main menu with Auth UI
+SupabaseClient.gd          - HTTP wrapper for Supabase API
+  └─ register()
+  └─ login()
+  └─ logout()
+  └─ save_game_data()
+  └─ load_game_data()
+  └─ sync_game_data()
+
+GameManager.gd (Extended)  - Session tracking
+  └─ current_session: Dictionary
+  └─ is_authenticated: bool
+  └─ auth_token: String
+  └─ user_id: String
+```
+
+##### **Backend (Supabase)**
+```
+Authentication:
+  POST /auth/v1/signup       - Register new user
+  POST /auth/v1/token        - Login user
+  POST /auth/v1/logout       - Logout user
+  POST /auth/v1/refresh      - Refresh session token
+
+Database API (auto-generated):
+  GET  /rest/v1/save_data    - Load save data
+  POST /rest/v1/save_data    - Create save data
+  PATCH /rest/v1/save_data   - Update save data
+  DELETE /rest/v1/save_data  - Delete save data
+
+Tables:
+  auth.users          - Built-in Supabase auth
+  public.save_data    - Game save data (JSONB)
+```
+
+##### **Database Schema**
+```sql
+-- Save Data Table
+CREATE TABLE public.save_data (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  data JSONB NOT NULL,
+  version INTEGER DEFAULT 1,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(user_id)
+);
+
+-- Row Level Security
+ALTER TABLE public.save_data ENABLE ROW LEVEL SECURITY;
+
+-- Users can only access their own save data
+CREATE POLICY "Users can view own save data"
+  ON public.save_data FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own save data"
+  ON public.save_data FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own save data"
+  ON public.save_data FOR UPDATE
+  USING (auth.uid() = user_id);
+```
+
+##### **Hosting Stack**
+```
+Frontend:  Netlify/Vercel (Static hosting + CDN)
+Backend:   Supabase (PostgreSQL + Auth + API)
+Assets:    Netlify CDN / CloudFlare
+Domain:    Custom domain (optional)
+SSL:       Automatic (Let's Encrypt)
 ```
 
 #### **Core Scripts**
@@ -321,15 +512,16 @@ TowerVariants/
 
 ## 📈 Progress Tracking
 
-### **Overall Progress: 65%**
+### **Overall Progress: 57%**
 
 #### **Phase Completion**
 - Phase 1: ████████████████████ 100%
 - Phase 2: ████████████████████ 100%
 - Phase 3: ████████████████████ 100%
 - Phase 4: ████████████████████ 100%
-- Phase 5: ████░░░░░░░░░░░░░░░░  20%
-- Phase 6: ░░░░░░░░░░░░░░░░░░░░   0%
+- Phase 5: ░░░░░░░░░░░░░░░░░░░░   0% (Web App & Session - Starting)
+- Phase 6: ░░░░░░░░░░░░░░░░░░░░   0% (Metaprogression Expansion)
+- Phase 7: ░░░░░░░░░░░░░░░░░░░░   0% (Polish & Content)
 
 #### **Feature Categories**
 - Core Gameplay: ████████████████████ 100%
@@ -341,31 +533,39 @@ TowerVariants/
 
 ---
 
-## 🎯 Immediate Next Steps (Phase 5)
+## 🎯 Immediate Next Steps (Phase 5: Web App & Session System)
 
-### **Week 1: Settlement Foundation**
-1. Create Settlement scene structure
-2. Implement Settlement UI layout
-3. Add resource display (Honey, Pollen, Wax)
-4. Implement scene transition (TD ↔ Settlement)
+### **Sprint 1: Backend Setup (Days 1-5)** 🎯 **NEXT**
+1. ✅ Create Supabase account and project
+2. ✅ Setup database schema (users, sessions, save_data tables)
+3. ✅ Configure authentication (Email + Password)
+4. ✅ Test API endpoints (Postman/Insomnia)
+5. ✅ Configure Row Level Security policies
 
-### **Week 2: Tower Persistence**
-1. Extend save system for metaprogression towers
-2. Implement tower loading into fields
-3. Add tower state persistence (level, upgrades)
-4. Test tower persistence across sessions
+### **Sprint 2: Frontend Integration (Days 6-10)** 📋
+1. Create `SupabaseClient.gd` autoload
+2. Implement HTTP request wrapper functions
+3. Build Login/Register UI in Main menu
+4. Implement session storage in GameManager
+5. Add token refresh mechanism
 
-### **Week 3: Basic Upgrade System**
-1. Design upgrade tree structure
-2. Implement upgrade mechanics
-3. Add upgrade costs and effects
-4. Create upgrade UI
+### **Sprint 3: Cloud Save Integration (Days 11-13)** 📋
+1. Extend existing SaveManager for cloud sync
+2. Implement conflict resolution logic
+3. Add offline fallback with LocalStorage
+4. Test save/load/sync flows
 
-### **Week 4: Unlock & Progression**
-1. Implement unlock system
-2. Add progression rewards
-3. Create achievement framework
-4. Polish and testing
+### **Sprint 4: Polish & Testing (Days 14-16)** 📋
+1. Add loading states and error handling
+2. Implement security measures (token encryption)
+3. Test all auth flows and edge cases
+4. Add user feedback notifications
+
+### **Sprint 5: Web Deployment (Days 17-19)** 📋
+1. Configure Godot web export settings
+2. Setup Netlify/Vercel hosting
+3. Test production build
+4. Deploy to production
 
 ---
 
