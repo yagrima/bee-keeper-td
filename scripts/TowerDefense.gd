@@ -2066,14 +2066,13 @@ func create_tower_at_position(tower_name: String, position: Vector2) -> Tower:
 	
 	print("Tower created at: %s" % tower.global_position)
 	
-	# Add to UI canvas
-	var ui_canvas = $UI
-	ui_canvas.add_child(tower)
+	# Add to main scene instead of UI canvas
+	add_child(tower)
 	
 	# Force position update after adding to scene
 	tower.global_position = position
 	
-	print("Tower added to UI canvas at: %s" % tower.global_position)
+	print("Tower added to main scene at: %s" % tower.global_position)
 	
 	return tower
 
@@ -2214,6 +2213,7 @@ func _process(delta):
 		# Update range indicator position as well
 		if range_indicator != null and is_instance_valid(range_indicator):
 			range_indicator.global_position = mouse_pos
+			print("Range indicator moved to: %s" % mouse_pos)
 	else:
 		# If we're in normal placement mode, stop the process
 		if is_in_tower_placement:
@@ -2256,9 +2256,8 @@ func show_tower_range_at_mouse_position(tower: Tower):
 	range_indicator.global_position = mouse_pos
 	range_indicator.z_index = 5  # Ensure visibility
 	
-	# Add to scene
-	var ui_canvas = $UI
-	ui_canvas.add_child(range_indicator)
+	# Add to main scene instead of UI canvas
+	add_child(range_indicator)
 	
 	# Force position update after adding to scene
 	range_indicator.global_position = mouse_pos
