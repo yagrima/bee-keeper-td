@@ -1811,8 +1811,9 @@ func create_metaprogression_tower(tower_type: String, world_pos: Vector2, field_
 	print("Tower position after setting: %s" % tower.position)
 	print("Tower global position: %s" % tower.global_position)
 	
-	# Add to scene
-	add_child(tower)
+	# Add to scene - try adding to UI canvas instead of main scene
+	var ui_canvas = $UI
+	ui_canvas.add_child(tower)
 	
 	print("Tower position after add_child: %s" % tower.position)
 	print("Tower global position after add_child: %s" % tower.global_position)
@@ -1843,7 +1844,7 @@ func handle_metaprogression_tower_pickup(click_position: Vector2) -> bool:
 	# Check for metaprogression towers at click position
 	for tower in metaprogression_towers:
 		if tower and is_instance_valid(tower):
-			var distance = click_position.distance_to(tower.position)
+			var distance = click_position.distance_to(tower.global_position)
 			if distance < 32:  # Within tower radius
 				pickup_metaprogression_tower(tower)
 				return true
@@ -1860,29 +1861,26 @@ func pickup_metaprogression_tower(tower: Tower):
 	# Store the picked up tower
 	picked_up_tower = tower
 	
-	# Position tower at mouse position immediately
+	# Hide the original tower
+	tower.visible = false
+	
+	# Create a new tower at mouse position
 	var mouse_pos = get_global_mouse_position()
-	
-	# Convert mouse position to UI canvas coordinates
-	var ui_canvas = $UI
-	var local_mouse_pos = ui_canvas.to_local(mouse_pos)
-	tower.position = local_mouse_pos
-	
-	print("Mouse position: %s" % mouse_pos)
-	print("UI local position: %s" % local_mouse_pos)
-	print("Tower positioned at: %s" % tower.position)
-	print("Tower global position: %s" % tower.global_position)
+	var new_tower = create_tower_at_position(tower.tower_name, mouse_pos)
+	if new_tower:
+		picked_up_tower = new_tower
+		print("New tower created at mouse position: %s" % new_tower.global_position)
 	
 	# Show range indicator at mouse position
-	show_tower_range_at_mouse_position(tower)
+	show_tower_range_at_mouse_position(picked_up_tower)
 	
 	# Create a visual indicator that we're holding a tower
-	create_pickup_indicator(tower)
+	create_pickup_indicator(picked_up_tower)
 	
 	# Start following mouse position
 	start_tower_following_mouse()
 	
-	print("Metaprogression tower picked up: %s" % tower.tower_name)
+	print("Metaprogression tower picked up: %s" % picked_up_tower.tower_name)
 	print("=== PICKUP COMPLETE ===")
 
 func try_place_picked_up_tower(click_position: Vector2) -> bool:
@@ -2017,6 +2015,43 @@ func remove_pickup_indicator():
 	print("Removing pickup indicator")
 	# Implementation depends on desired visual feedback
 
+func create_tower_at_position(tower_name: String, position: Vector2) -> Tower:
+	"""Create a tower at a specific position"""
+	print("Creating tower at position: %s" % position)
+	
+	var tower: Tower
+	var tower_type: String
+	
+	# Determine tower type from name
+	if "Basic Shooter" in tower_name:
+		tower = BasicShooterTower.new()
+		tower_type = "basic_shooter"
+	elif "Piercing Shooter" in tower_name:
+		tower = PiercingTower.new()
+		tower_type = "piercing_shooter"
+	else:
+		print("Unknown tower name: %s" % tower_name)
+		return null
+	
+	if not tower:
+		print("Failed to create tower instance")
+		return null
+	
+	# Set tower properties
+	tower.name = "PickedUpTower"
+	tower.tower_name = tower_name
+	tower.global_position = position
+	
+	print("Tower created at: %s" % tower.global_position)
+	
+	# Add to UI canvas
+	var ui_canvas = $UI
+	ui_canvas.add_child(tower)
+	
+	print("Tower added to UI canvas at: %s" % tower.global_position)
+	
+	return tower
+
 # =============================================================================
 # TOWER MOUSE FOLLOWING SYSTEM
 # =============================================================================
@@ -2039,18 +2074,14 @@ func _process(delta):
 	"""Update picked up tower position to follow mouse"""
 	if picked_up_tower != null and is_instance_valid(picked_up_tower):
 		var mouse_pos = get_global_mouse_position()
-		var old_pos = picked_up_tower.position
-		
-		# Convert mouse position to UI canvas coordinates
-		var ui_canvas = $UI
-		var local_mouse_pos = ui_canvas.to_local(mouse_pos)
+		var old_pos = picked_up_tower.global_position
 		
 		# Update tower position to mouse position
-		picked_up_tower.position = local_mouse_pos
+		picked_up_tower.global_position = mouse_pos
 		
 		# Debug: Print position changes
-		if old_pos != local_mouse_pos:
-			print("Tower moved from %s to %s" % [old_pos, local_mouse_pos])
+		if old_pos != mouse_pos:
+			print("Tower moved from %s to %s" % [old_pos, mouse_pos])
 		
 		# Update range indicator position as well
 		if range_indicator != null and is_instance_valid(range_indicator):
@@ -2088,14 +2119,12 @@ func show_tower_range_at_mouse_position(tower: Tower):
 	var range_circle = create_round_range_indicator(tower.range)
 	range_indicator.add_child(range_circle)
 	
-	# Position at mouse position (convert to UI canvas coordinates)
-	var ui_canvas = $UI
-	var mouse_pos = get_global_mouse_position()
-	var local_mouse_pos = ui_canvas.to_local(mouse_pos)
-	range_indicator.position = local_mouse_pos
+	# Position at mouse position
+	range_indicator.global_position = get_global_mouse_position()
 	range_indicator.z_index = 5  # Ensure visibility
 	
 	# Add to scene
+	var ui_canvas = $UI
 	ui_canvas.add_child(range_indicator)
 	
 	print("Range indicator created: ", range_indicator.name, " at mouse position: ", range_indicator.global_position, " with range: ", tower.range)
