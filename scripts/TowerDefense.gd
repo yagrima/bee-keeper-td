@@ -2139,6 +2139,8 @@ func handle_tower_hotkey(tower_type: String, tower_name: String):
 		# Force cleanup of any remaining ephemeral towers
 		force_cleanup_ephemeral_towers()
 		force_cleanup_range_indicators()
+		# Additional cleanup for W/E towers
+		force_cleanup_all_ephemeral_objects()
 		# Verify cleanup was successful
 		verify_cleanup_success()
 		return
@@ -2155,6 +2157,9 @@ func start_normal_tower_placement(tower_type: String, tower_name: String):
 	
 	# Clean up any existing mouse following system first
 	cleanup_mouse_following_system()
+	
+	# Force cleanup of ALL ephemeral objects before starting
+	force_cleanup_all_ephemeral_objects()
 	
 	# Use the existing tower_placer system
 	if tower_placer:
@@ -2308,6 +2313,56 @@ func check_for_ephemeral_towers():
 		print("✓ No ephemeral towers found")
 	
 	print("=== EPHEMERAL TOWER CHECK COMPLETE ===")
+
+func force_cleanup_all_ephemeral_objects():
+	"""Force cleanup of ALL ephemeral objects in the scene"""
+	print("=== FORCE CLEANING UP ALL EPHEMERAL OBJECTS ===")
+	
+	# Clean up picked up tower
+	if picked_up_tower != null:
+		print("Force cleaning picked_up_tower: %s" % picked_up_tower.tower_name)
+		if is_instance_valid(picked_up_tower):
+			picked_up_tower.queue_free()
+		picked_up_tower = null
+	
+	# Clean up range indicator
+	if range_indicator != null:
+		print("Force cleaning range_indicator: %s" % range_indicator.name)
+		if is_instance_valid(range_indicator):
+			range_indicator.queue_free()
+		range_indicator = null
+	
+	# Clean up ALL nodes with "UnifiedTower" in name
+	var all_nodes = get_tree().get_nodes_in_group("")
+	for node in all_nodes:
+		if node.name.begins_with("UnifiedTower"):
+			print("Force cleaning ephemeral tower: %s" % node.name)
+			node.queue_free()
+	
+	# Clean up ALL nodes with "RangeIndicator" in name
+	for node in all_nodes:
+		if node.name.begins_with("RangeIndicator"):
+			print("Force cleaning range indicator: %s" % node.name)
+			node.queue_free()
+	
+	# Clean up ALL children in main scene
+	for child in get_children():
+		if child.name.begins_with("UnifiedTower") or child.name.begins_with("RangeIndicator"):
+			print("Force cleaning child: %s" % child.name)
+			child.queue_free()
+	
+	# Clean up ALL children in UI canvas
+	var ui_canvas = $UI
+	if ui_canvas:
+		for child in ui_canvas.get_children():
+			if child.name.begins_with("UnifiedTower") or child.name.begins_with("RangeIndicator"):
+				print("Force cleaning UI child: %s" % child.name)
+				child.queue_free()
+	
+	# Stop any processing
+	set_process(false)
+	
+	print("=== FORCE CLEANUP ALL EPHEMERAL OBJECTS COMPLETE ===")
 
 func start_unified_tower_placement(tower_type: String, tower_name: String):
 	"""Start unified tower placement system"""
