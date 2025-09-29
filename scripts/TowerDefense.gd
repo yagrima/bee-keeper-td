@@ -2127,6 +2127,8 @@ func handle_tower_hotkey(tower_type: String, tower_name: String):
 	"""Handle tower hotkey with unified logic"""
 	print("=== HANDLING TOWER HOTKEY ===")
 	print("Tower type: %s, Tower name: %s" % [tower_type, tower_name])
+	print("Current is_in_tower_placement: %s" % is_in_tower_placement)
+	print("Current current_tower_type: %s" % current_tower_type)
 	
 	# Check if we're already in placement mode for this tower type (toggle off)
 	if is_in_tower_placement and current_tower_type == tower_type:
@@ -2142,20 +2144,25 @@ func handle_tower_hotkey(tower_type: String, tower_name: String):
 		return
 	
 	# Start normal tower placement system
+	print("Starting normal tower placement for: %s" % tower_name)
 	start_normal_tower_placement(tower_type, tower_name)
 
 func start_normal_tower_placement(tower_type: String, tower_name: String):
 	"""Start normal tower placement system using tower_placer"""
 	print("=== STARTING NORMAL TOWER PLACEMENT ===")
 	print("Tower type: %s, Tower name: %s" % [tower_type, tower_name])
+	print("tower_placer exists: %s" % (tower_placer != null))
 	
 	# Clean up any existing mouse following system first
 	cleanup_mouse_following_system()
 	
 	# Use the existing tower_placer system
 	if tower_placer:
+		print("Calling tower_placer.start_tower_placement(%s)" % tower_type)
 		tower_placer.start_tower_placement(tower_type)
 		print("Normal tower placement started for: %s" % tower_name)
+		print("After placement - is_in_tower_placement: %s" % is_in_tower_placement)
+		print("After placement - current_tower_type: %s" % current_tower_type)
 	else:
 		print("ERROR: tower_placer is null!")
 
