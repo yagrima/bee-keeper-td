@@ -454,5 +454,5 @@ Weiter zu **Sprint 2: Frontend Integration**
 ---
 
 **Dokument Version**: 1.0  
-**Letzte Aktualisierung**: 2024-12-30  
+**Letzte Aktualisierung**: 2025-09-29  
 **Status**: Active  

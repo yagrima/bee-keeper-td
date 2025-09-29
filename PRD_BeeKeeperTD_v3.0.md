@@ -5,8 +5,8 @@
 **BeeKeeperTD** ist ein Tower Defense Spiel im Bienen-Theme mit innovativen Gameplay-Mechaniken, Metaprogression-System und umfassender Test-Automatisierung.
 
 **Version**: 3.0  
-**Letzte Aktualisierung**: 2024-12-29  
-**Status**: Active Development - Metaprogression Phase
+**Letzte Aktualisierung**: 2025-09-29  
+**Status**: Active Development - Web App & Session System Phase
 
 ---
 
@@ -486,6 +486,6 @@
 ---
 
 **Document Status**: Active  
-**Last Updated**: 2024-12-29  
-**Next Review**: 2025-01-05  
+**Last Updated**: 2025-09-29  
+**Next Review**: 2025-10-06  
 **Version**: 3.0

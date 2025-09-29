@@ -4,9 +4,9 @@
 
 **Project**: BeeKeeperTD - Tower Defense Game mit Bienen-Theme  
 **Version**: 3.0  
-**Last Updated**: 2024-12-29  
-**Current Phase**: Phase 5 - Metaprogression Expansion  
-**Status**: Metaprogression Foundation Complete, Starting Expansion
+**Last Updated**: 2025-09-29  
+**Current Phase**: Phase 5 - Web App & Session System  
+**Status**: Starting Web App Implementation
 
 ---
 
@@ -103,7 +103,7 @@
 
 ---
 
-### **Phase 5: Web App & Session System** 🔄 **IN PROGRESS** (Starting 2024-12-30)
+### **Phase 5: Web App & Session System** 🔄 **IN PROGRESS** (Starting 2025-09-29)
 
 #### **Objectives**
 - Implement account-based session tracking
@@ -215,7 +215,7 @@
 
 ---
 
-### **Phase 6: Metaprogression Expansion** 📋 **PLANNED** (2025-01-20+)
+### **Phase 6: Metaprogression Expansion** 📋 **PLANNED** (2025-10-20+)
 
 #### **Objectives**
 - Expand metaprogression system
@@ -258,7 +258,7 @@
 
 ---
 
-### **Phase 7: Polish & Content** 📋 **PLANNED** (2025-02-15+)
+### **Phase 7: Polish & Content** 📋 **PLANNED** (2025-11-15+)
 
 #### **Objectives**
 - Add visual and audio polish
@@ -681,7 +681,7 @@ TowerVariants/
 
 ## 🎯 Long-Term Vision
 
-### **6 Months (2025-06)**
+### **6 Months (2026-03)**
 - Complete metaprogression system
 - Multiple maps and environments
 - 10+ tower types
@@ -689,7 +689,7 @@ TowerVariants/
 - Sound and visual effects
 - Achievements and leaderboards
 
-### **12 Months (2025-12)**
+### **12 Months (2026-09)**
 - Campaign mode
 - Endless mode
 - Multiplayer co-op (stretch goal)
@@ -699,6 +699,6 @@ TowerVariants/
 ---
 
 **Document Status**: Active  
-**Last Updated**: 2024-12-29  
-**Next Review**: 2025-01-05  
+**Last Updated**: 2025-09-29  
+**Next Review**: 2025-10-06  
 **Version**: 3.0
