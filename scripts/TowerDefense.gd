@@ -2130,27 +2130,16 @@ func handle_tower_hotkey(tower_type: String, tower_name: String):
 	print("Current is_in_tower_placement: %s" % is_in_tower_placement)
 	print("Current current_tower_type: %s" % current_tower_type)
 	
-	# Check if we're already in placement mode for this tower type (toggle off)
-	if is_in_tower_placement and current_tower_type == tower_type:
-		print("Already in placement mode for %s, canceling placement" % tower_type)
+	# SIMPLE SOLUTION: Always cancel first, then start fresh
+	if is_in_tower_placement:
+		print("Already in placement mode, canceling first")
 		tower_placer.cancel_placement()
-		# Clean up any mouse following system
-		cleanup_mouse_following_system()
-		# Force cleanup of any remaining ephemeral towers
-		force_cleanup_ephemeral_towers()
-		force_cleanup_range_indicators()
-		# Additional cleanup for W/E towers
-		force_cleanup_all_ephemeral_objects()
-		# Wait for cleanup to complete
+		# Wait for cancellation to complete
 		await get_tree().process_frame
-		# Force cleanup again after frame
-		force_cleanup_all_ephemeral_objects()
-		# Verify cleanup was successful
-		verify_cleanup_success()
-		return
+		await get_tree().process_frame
 	
-	# Start normal tower placement system
-	print("Starting normal tower placement for: %s" % tower_name)
+	# Start fresh placement
+	print("Starting fresh tower placement for: %s" % tower_name)
 	start_normal_tower_placement(tower_type, tower_name)
 
 func start_normal_tower_placement(tower_type: String, tower_name: String):
@@ -2159,19 +2148,11 @@ func start_normal_tower_placement(tower_type: String, tower_name: String):
 	print("Tower type: %s, Tower name: %s" % [tower_type, tower_name])
 	print("tower_placer exists: %s" % (tower_placer != null))
 	
-	# Clean up any existing mouse following system first
-	cleanup_mouse_following_system()
-	
-	# Force cleanup of ALL ephemeral objects before starting
-	force_cleanup_all_ephemeral_objects()
-	
-	# Use the existing tower_placer system
+	# SIMPLE: Just use tower_placer directly
 	if tower_placer:
 		print("Calling tower_placer.start_tower_placement(%s)" % tower_type)
 		tower_placer.start_tower_placement(tower_type)
 		print("Normal tower placement started for: %s" % tower_name)
-		print("After placement - is_in_tower_placement: %s" % is_in_tower_placement)
-		print("After placement - current_tower_type: %s" % current_tower_type)
 	else:
 		print("ERROR: tower_placer is null!")
 
