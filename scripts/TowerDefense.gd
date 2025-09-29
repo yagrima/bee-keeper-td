@@ -1725,8 +1725,8 @@ func place_random_towers_in_field(field_pos: Vector2, field_number: int):
 		field_pos + Vector2(48, 48)   # Bottom-right
 	]
 	
-	# Available tower types for random selection
-	var tower_types = ["stinger", "propolis_bomber", "nectar_sprayer", "lightning_flower"]
+	# Available tower types for random selection (using existing basic towers)
+	var tower_types = ["basic_shooter", "piercing_shooter"]
 	
 	for i in range(tower_positions.size()):
 		var tower_pos = tower_positions[i]
@@ -1743,17 +1743,13 @@ func create_metaprogression_tower(tower_type: String, position: Vector2, field_n
 	"""Create a tower for metaprogression field"""
 	print("Creating metaprogression tower: %s at %s" % [tower_type, position])
 	
-	# Create tower instance based on type
+	# Create tower instance based on type (using existing basic towers)
 	var tower_script = null
 	match tower_type:
-		"stinger":
-			tower_script = load("res://scripts/BasicShooterTower.gd")  # Use BasicShooter as Stinger
-		"propolis_bomber":
-			tower_script = load("res://scripts/PiercingTower.gd")  # Use Piercing as Propolis Bomber
-		"nectar_sprayer":
-			tower_script = load("res://scripts/BasicShooterTower.gd")  # Use BasicShooter as Nectar Sprayer
-		"lightning_flower":
-			tower_script = load("res://scripts/BasicShooterTower.gd")  # Use BasicShooter as Lightning Flower
+		"basic_shooter":
+			tower_script = load("res://scripts/BasicShooterTower.gd")
+		"piercing_shooter":
+			tower_script = load("res://scripts/PiercingTower.gd")
 		_:
 			tower_script = load("res://scripts/BasicShooterTower.gd")
 	
@@ -1763,6 +1759,13 @@ func create_metaprogression_tower(tower_type: String, position: Vector2, field_n
 		# Set tower properties
 		tower.tower_name = tower_type.replace("_", " ").capitalize()
 		tower.global_position = position
+		
+		# Set proper tower names for display
+		match tower_type:
+			"basic_shooter":
+				tower.tower_name = "Basic Shooter"
+			"piercing_shooter":
+				tower.tower_name = "Piercing Shooter"
 		
 		# Make towers slightly different for visual variety
 		tower.damage = 10.0 + (field_number * 2.0) + (tower_index * 1.0)
