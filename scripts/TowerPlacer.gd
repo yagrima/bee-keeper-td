@@ -249,20 +249,32 @@ func is_valid_placement_position(pos: Vector2) -> bool:
 		return false
 
 	# Check if there's already a tower here
+	var td_scene = get_parent()
+	var map_offset = td_scene.get_meta("map_offset", Vector2.ZERO)
+	
+	# Convert pos to UI coordinates for comparison (towers are in UI canvas with offset)
+	var pos_with_offset = pos + map_offset
+	
 	for tower in placed_towers:
-		if tower.global_position.distance_to(pos) < grid_size / 2:
-			return false
+		if tower and is_instance_valid(tower):
+			var distance = tower.global_position.distance_to(pos_with_offset)
+			print("Checking tower at %s against position %s, distance: %.2f" % [tower.global_position, pos_with_offset, distance])
+			if distance < grid_size / 2:
+				print("❌ Position blocked by existing tower!")
+				return false
 	
 	# Check metaprogression towers from TowerDefense
-	var td_scene = get_parent()
 	if td_scene.has_method("get_metaprogression_towers"):
 		var metaprogression_towers = td_scene.get_metaprogression_towers()
 		for tower in metaprogression_towers:
 			if tower and is_instance_valid(tower):
-				var distance = tower.global_position.distance_to(pos)
+				var distance = tower.global_position.distance_to(pos_with_offset)
+				print("Checking metaprogression tower at %s against position %s, distance: %.2f" % [tower.global_position, pos_with_offset, distance])
 				if distance < grid_size / 2:
+					print("❌ Position blocked by metaprogression tower!")
 					return false
-
+	
+	print("✅ Position %s is valid for tower placement" % pos_with_offset)
 	return true
 
 func attempt_tower_placement(screen_pos: Vector2):

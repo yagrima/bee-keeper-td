@@ -1950,21 +1950,30 @@ func is_position_on_path(position: Vector2) -> bool:
 
 func is_position_occupied(position: Vector2) -> bool:
 	"""Check if position is occupied by another tower"""
+	print("Checking if position %s is occupied..." % position)
+	
 	# Check tower placer towers
 	if tower_placer and tower_placer.placed_towers:
 		for tower in tower_placer.placed_towers:
 			if tower and is_instance_valid(tower):
-				var distance = position.distance_to(tower.position)
+				# Use global_position for proper comparison
+				var distance = position.distance_to(tower.global_position)
+				print("  Tower at %s, distance: %.2f" % [tower.global_position, distance])
 				if distance < 32:  # Within tower radius
+					print("  ❌ Position occupied by tower!")
 					return true
 	
 	# Check metaprogression towers
 	for tower in metaprogression_towers:
 		if tower and is_instance_valid(tower):
-			var distance = position.distance_to(tower.position)
+			# Use global_position for proper comparison
+			var distance = position.distance_to(tower.global_position)
+			print("  Metaprogression tower at %s, distance: %.2f" % [tower.global_position, distance])
 			if distance < 32:  # Within tower radius
+				print("  ❌ Position occupied by metaprogression tower!")
 				return true
 	
+	print("  ✅ Position is not occupied")
 	return false
 
 func place_picked_up_tower(position: Vector2):
