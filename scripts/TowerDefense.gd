@@ -1872,18 +1872,16 @@ func pickup_metaprogression_tower(tower: Tower):
 	print("Tower original position: %s" % tower.global_position)
 	print("Mouse position: %s" % get_global_mouse_position())
 	
-	# Store the picked up tower
+	# Store the original tower as the picked up tower
 	picked_up_tower = tower
 	
-	# Hide the original tower
-	tower.visible = false
+	# Store original position and parent for potential return
+	picked_up_tower.set_meta("original_position", tower.global_position)
+	picked_up_tower.set_meta("original_parent", tower.get_parent())
+	picked_up_tower.set_meta("original_field_number", tower.get_meta("field_number", -1))
 	
-	# Create a new tower at mouse position
-	var mouse_pos = get_global_mouse_position()
-	var new_tower = create_tower_at_position(tower.tower_name, mouse_pos)
-	if new_tower:
-		picked_up_tower = new_tower
-		print("New tower created at mouse position: %s" % new_tower.global_position)
+	# Move tower to follow mouse (keep it visible)
+	picked_up_tower.z_index = 100  # Above everything
 	
 	# Show range indicator at mouse position
 	show_tower_range_at_mouse_position(picked_up_tower)
@@ -1894,6 +1892,7 @@ func pickup_metaprogression_tower(tower: Tower):
 	# Start following mouse position
 	start_tower_following_mouse()
 	
+	print("Stored original position: %s" % tower.global_position)
 	print("Metaprogression tower picked up: %s" % picked_up_tower.tower_name)
 	print("=== PICKUP COMPLETE ===")
 
@@ -1982,42 +1981,51 @@ func is_position_occupied(position: Vector2) -> bool:
 
 func place_picked_up_tower(position: Vector2):
 	"""Place the picked up tower at the specified position"""
-	print("Placing picked up tower at: %s" % position)
+	print("=== PLACING PICKED UP TOWER ===")
+	print("Click position: %s" % position)
 	
 	if picked_up_tower == null:
+		print("ERROR: No tower to place!")
 		return
 	
-	# Align position to grid (32x32 tiles)
-	var grid_pos = Vector2(int(position.x / 32), int(position.y / 32))
-	var aligned_position = Vector2(grid_pos.x * 32, grid_pos.y * 32)
+	# Get map offset for coordinate conversion
+	var map_offset = get_meta("map_offset", Vector2.ZERO)
 	
-	print("Original position: %s, Grid position: %s, Aligned position: %s" % [position, grid_pos, aligned_position])
+	# Convert click position (UI coordinates) to map coordinates
+	var map_position = position - map_offset
+	
+	# Align to grid (32x32 tiles)
+	var grid_pos = Vector2(int(map_position.x / 32), int(map_position.y / 32))
+	var aligned_map_position = Vector2(grid_pos.x * 32 + 16, grid_pos.y * 32 + 16)  # Center in grid cell
+	var aligned_ui_position = aligned_map_position + map_offset
+	
+	print("Map position: %s, Grid: %s, Aligned map: %s, Aligned UI: %s" % [map_position, grid_pos, aligned_map_position, aligned_ui_position])
 	
 	# Move tower from UI canvas to main scene for proper placement
 	var ui_canvas = $UI
 	if picked_up_tower.get_parent() == ui_canvas:
 		ui_canvas.remove_child(picked_up_tower)
 		add_child(picked_up_tower)
-		# Reset z_index for main scene placement
-		picked_up_tower.z_index = 0
-		print("Moved tower from UI canvas to main scene for placement")
+		print("Moved tower from UI canvas to main scene")
 	
-	# Set tower position to aligned grid position AFTER moving to main scene
-	picked_up_tower.global_position = aligned_position
+	# Reset z_index for main scene placement
+	picked_up_tower.z_index = 0
+	
+	# Set tower position to aligned map position (without offset, since it's in main scene now)
+	picked_up_tower.global_position = aligned_map_position
 	
 	# Make tower visible
 	picked_up_tower.visible = true
 	
-	print("Tower positioned at: %s (aligned from %s)" % [picked_up_tower.global_position, position])
-	
-	# Verify tower is properly positioned
-	print("Tower final position: %s" % picked_up_tower.global_position)
+	print("Tower positioned at: %s" % picked_up_tower.global_position)
 	print("Tower parent: %s" % picked_up_tower.get_parent().name)
-	print("Tower visible: %s" % picked_up_tower.visible)
 	
-	# Remove metaprogression tower metadata
+	# Remove metaprogression tower metadata (but keep originals for potential return)
 	picked_up_tower.remove_meta("is_metaprogression_tower")
 	picked_up_tower.remove_meta("field_number")
+	picked_up_tower.remove_meta("original_position")
+	picked_up_tower.remove_meta("original_parent")
+	picked_up_tower.remove_meta("original_field_number")
 	
 	# Add to tower placer
 	if tower_placer:
@@ -2028,6 +2036,7 @@ func place_picked_up_tower(position: Vector2):
 	
 	# Remove from metaprogression towers
 	metaprogression_towers.erase(picked_up_tower)
+	print("Tower removed from metaprogression_towers")
 	
 	# Clear picked up tower
 	picked_up_tower = null
@@ -2037,18 +2046,53 @@ func place_picked_up_tower(position: Vector2):
 	remove_pickup_indicator()
 	clear_range_indicator()
 	
-	print("Metaprogression tower placed successfully!")
+	print("=== METAPROGRESSION TOWER PLACED SUCCESSFULLY ===")
 
 func return_picked_up_tower():
 	"""Return the picked up tower to its original position"""
-	print("Returning picked up tower to original position")
+	print("=== RETURNING PICKED UP TOWER TO ORIGINAL POSITION ===")
 	
 	if picked_up_tower == null:
+		print("ERROR: No tower to return!")
 		return
+	
+	# Get original position and parent from metadata
+	var original_position = picked_up_tower.get_meta("original_position", Vector2.ZERO)
+	var original_parent = picked_up_tower.get_meta("original_parent", null)
+	var original_field_number = picked_up_tower.get_meta("original_field_number", -1)
+	
+	print("Original position: %s" % original_position)
+	print("Original parent: %s" % (original_parent.name if original_parent else "null"))
+	print("Original field number: %d" % original_field_number)
+	
+	# Restore original parent if needed
+	if original_parent and picked_up_tower.get_parent() != original_parent:
+		var current_parent = picked_up_tower.get_parent()
+		if current_parent:
+			current_parent.remove_child(picked_up_tower)
+		original_parent.add_child(picked_up_tower)
+		print("Restored tower to original parent: %s" % original_parent.name)
+	
+	# Restore original position
+	picked_up_tower.global_position = original_position
+	
+	# Reset z_index
+	picked_up_tower.z_index = 0
 	
 	# Make tower visible again
 	picked_up_tower.visible = true
 	
+	# Restore metaprogression metadata
+	picked_up_tower.set_meta("is_metaprogression_tower", true)
+	picked_up_tower.set_meta("field_number", original_field_number)
+	
+	# Ensure tower is still in metaprogression_towers array
+	if not picked_up_tower in metaprogression_towers:
+		metaprogression_towers.append(picked_up_tower)
+		print("Re-added tower to metaprogression_towers")
+	
+	print("Tower returned to position: %s" % picked_up_tower.global_position)
+	
 	# Clear picked up tower
 	picked_up_tower = null
 	
@@ -2056,6 +2100,8 @@ func return_picked_up_tower():
 	stop_tower_following_mouse()
 	remove_pickup_indicator()
 	clear_range_indicator()
+	
+	print("=== TOWER RETURNED SUCCESSFULLY ===")
 	
 	print("Metaprogression tower returned to original position")
 
