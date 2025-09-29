@@ -115,43 +115,63 @@
 
 ##### **Sprint 1: Backend Setup (3-5 days)** 📋
 - 📋 **Supabase Setup**:
-  - Create Supabase project
-  - Configure database schema (users, sessions, save_data)
-  - Setup authentication (Email + Password)
+  - Create Supabase project (EU Region - Frankfurt)
+  - Configure database schema (users, save_data, user_rate_limits, audit_logs)
+  - Setup authentication (Email + Password, 14 char min)
   - Configure Row Level Security (RLS)
-  
-- 📋 **Database Schema**:
+
+- 📋 **Database Schema** (Security Hardened):
   ```sql
-  -- users: id, email, password_hash, username, created_at
-  -- sessions: id, user_id, token, expires_at, created_at
-  -- save_data: id, user_id, data (JSONB), version, updated_at
+  -- save_data: id, user_id, data (JSONB with validation), version, updated_at
+  -- user_rate_limits: Token Bucket Algorithm (10 burst, 1/min refill)
+  -- audit_logs: Full audit trail (90 days retention)
+
+  -- JSONB Validation: Range checks, array depth protection, type validation
+  -- Rate Limiting: Gameplay-compatible Token Bucket
+  -- Security: 1MB size limit, comprehensive input validation
   ```
-  
+
+- 📋 **Security Configuration**:
+  - Password Policy: Min 14 chars, max 128, complexity requirements
+  - Session Timeout: 24 hours (JWT: 1h, Refresh: 24h)
+  - CORS: Configure allowed origins, methods, headers
+  - Audit Logging: Track all save data changes
+
 - 📋 **API Testing**:
-  - Test register endpoint
-  - Test login endpoint
-  - Test save/load endpoints
-  - Test session refresh
+  - Test register endpoint (with 14 char password)
+  - Test login endpoint (rate limiting)
+  - Test save/load endpoints (JSONB validation)
+  - Test session refresh (token rotation)
 
 ##### **Sprint 2: Frontend Integration (3-5 days)** 🔄
-- 🔄 **SupabaseClient Autoload**:
-  - HTTP request wrapper
+- 🔄 **SupabaseClient Autoload** (Security Hardened):
+  - HTTP request wrapper with HTTPS enforcement
   - Auth flow (register, login, logout)
-  - Session management
-  - Token refresh mechanism
-  
-- 🔄 **Login/Register UI**:
+  - Session management with auto-refresh
+  - Token refresh mechanism (5 min before expiry)
+  - Rate limiting (100ms between requests)
+
+- 🔄 **Token Storage** (AES-GCM Encryption):
+  - Access Token in SessionStorage (tab-scope security)
+  - Refresh Token encrypted in LocalStorage (Web Crypto API)
+  - Device-specific encryption key (256-bit)
+  - PBKDF2 key derivation (100k iterations)
+  - Secure token cleanup on logout
+
+- 🔄 **Login/Register UI** (Enhanced Validation):
   - Main menu authentication screen
-  - Registration form (email, username, password)
-  - Login form (email, password)
-  - "Remember Me" functionality
+  - Registration form (email, username, 14+ char password)
+  - Password strength indicator
+  - Login form with client-side validation
   - Error handling and user feedback
-  
+  - Input sanitization (XSS prevention)
+
 - 🔄 **SessionManager Integration**:
   - Store current session in GameManager
-  - Persist auth token locally (encrypted)
+  - Encrypted token persistence
   - Auto-login on app start
-  - Session expiration handling
+  - Session expiration handling (24h timeout)
+  - Inactivity logout (1 hour)
 
 ##### **Sprint 3: Cloud Save Integration (2-3 days)** 📋
 - 📋 **SaveManager Extension**:
@@ -178,37 +198,48 @@
   - Error messages (network, auth, validation)
   - Success notifications
   - Session timeout warnings
-  
-- 📋 **Security**:
-  - HTTPS enforcement
-  - Token encryption in storage
-  - Input validation
-  - Rate limiting handling
-  
+  - DSGVO consent dialog
+
+- 📋 **Security** (Production Ready):
+  - HTTPS enforcement with startup check
+  - AES-GCM token encryption (Web Crypto API)
+  - Client + Server-side input validation
+  - Rate limiting handling (Token Bucket)
+  - Content Security Policy (CSP) headers
+  - XSS protection (input sanitization)
+  - Audit logging verification
+
 - 📋 **Testing**:
-  - Auth flow testing
-  - Save/load testing
+  - Auth flow testing (register, login, logout, token refresh)
+  - Save/load testing (JSONB validation, rate limits)
   - Conflict resolution testing
   - Offline mode testing
+  - Security testing (XSS, injection attempts)
+  - Token encryption/decryption tests
 
 ##### **Sprint 5: Web Export & Deployment (2-3 days)** 📋
 - 📋 **Godot Web Export**:
   - Configure export settings
   - Test web build locally
   - Optimize asset loading
-  - Test browser compatibility
-  
-- 📋 **Hosting Setup**:
+  - Test browser compatibility (Chrome, Firefox, Safari)
+
+- 📋 **Hosting Setup** (Security Hardened):
   - Setup Netlify/Vercel project
+  - Configure Security Headers (CSP, HSTS, X-Frame-Options, etc.)
   - Configure custom domain (optional)
   - Setup CDN for assets
-  - Configure CORS
-  
+  - Configure CORS (production + dev origins)
+  - Environment variables (SUPABASE_URL, SUPABASE_ANON_KEY)
+
 - 📋 **Production Deployment**:
   - Deploy to staging environment
-  - Test production build
+  - Security verification (HTTPS, headers, CORS)
+  - Test production build (auth, save/load, encryption)
+  - Penetration testing (optional, recommended)
   - Deploy to production
-  - Setup monitoring
+  - Setup monitoring (error logs, failed logins, rate limits)
+  - DSGVO compliance check
 
 #### **Time Estimate**: 2-3 weeks  
 #### **Complexity**: Very High
