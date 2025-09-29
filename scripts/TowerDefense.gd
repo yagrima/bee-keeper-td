@@ -1638,20 +1638,20 @@ func test_lightning_flower_range_indicator() -> bool:
 	return false
 
 # =============================================================================
-# METAPROGRESSION FIELDS - 2x2 FIELDS WITH RANDOM TOWERS
+# METAPROGRESSION FIELDS - EMPTY 2x2 FIELDS OUTSIDE PLAY AREA
 # =============================================================================
 
 func setup_metaprogression_fields():
-	"""Setup five 2x2 fields with random towers for metaprogression preparation"""
+	"""Setup five empty 2x2 fields outside the play area for metaprogression"""
 	print("Setting up metaprogression fields...")
 	
-	# Define five 2x2 field positions (avoiding the path)
+	# Define five 2x2 field positions outside the play area
 	var field_positions = [
-		Vector2(1, 1),   # Top-left area
-		Vector2(8, 1),   # Top-middle area  
-		Vector2(15, 8),  # Bottom-right area
-		Vector2(2, 12),  # Bottom-left area
-		Vector2(17, 1)   # Top-right area
+		Vector2(-3, 1),   # Left of play area
+		Vector2(22, 1),   # Right of play area
+		Vector2(1, -3),   # Above play area
+		Vector2(1, 16),   # Below play area
+		Vector2(22, 16)   # Bottom-right corner
 	]
 	
 	var map_offset = get_meta("map_offset", Vector2.ZERO)
@@ -1663,7 +1663,7 @@ func setup_metaprogression_fields():
 	print("Metaprogression fields setup complete!")
 
 func create_metaprogression_field(grid_pos: Vector2, map_offset: Vector2, field_number: int):
-	"""Create a 2x2 field with random towers"""
+	"""Create an empty 2x2 field outside the play area"""
 	print("Creating metaprogression field %d at grid position %s" % [field_number, grid_pos])
 	
 	# Calculate world position (2x2 field = 64x64 pixels)
@@ -1674,17 +1674,17 @@ func create_metaprogression_field(grid_pos: Vector2, map_offset: Vector2, field_
 	field_background.name = "MetaprogressionField_%d" % field_number
 	field_background.size = Vector2(64, 64)  # 2x2 tiles
 	field_background.position = world_pos
-	field_background.color = Color(0.3, 0.3, 0.6, 0.8)  # Blue-purple for metaprogression
+	field_background.color = Color(0.2, 0.2, 0.4, 0.6)  # Dark blue for metaprogression
 	field_background.z_index = -3  # Above path but below other elements
 	$UI.add_child(field_background)
 	
 	# Create border for the field
 	create_field_border(field_background, world_pos)
 	
-	# Place random towers in the 2x2 field
-	place_random_towers_in_field(world_pos, field_number)
+	# Create field label
+	create_field_label(field_background, world_pos, field_number)
 	
-	print("Metaprogression field %d created at %s" % [field_number, world_pos])
+	print("Metaprogression field %d created at %s (empty)" % [field_number, world_pos])
 
 func create_field_border(field_background: ColorRect, world_pos: Vector2):
 	"""Create a border around the metaprogression field"""
@@ -1696,8 +1696,8 @@ func create_field_border(field_background: ColorRect, world_pos: Vector2):
 	
 	# Create border using Line2D
 	var border_line = Line2D.new()
-	border_line.width = 3.0
-	border_line.default_color = Color.YELLOW
+	border_line.width = 2.0
+	border_line.default_color = Color.CYAN
 	border_line.z_index = 1
 	
 	# Create rectangle border
@@ -1713,94 +1713,18 @@ func create_field_border(field_background: ColorRect, world_pos: Vector2):
 	
 	field_background.add_child(border)
 
-func place_random_towers_in_field(field_pos: Vector2, field_number: int):
-	"""Place random towers in the 2x2 field"""
-	print("Placing random towers in field %d..." % field_number)
-	
-	# Define 4 positions within the 2x2 field (center of each 1x1 tile)
-	var tower_positions = [
-		field_pos + Vector2(16, 16),  # Top-left
-		field_pos + Vector2(48, 16),  # Top-right
-		field_pos + Vector2(16, 48),  # Bottom-left
-		field_pos + Vector2(48, 48)   # Bottom-right
-	]
-	
-	# Available tower types for random selection (using new tower types)
-	var tower_types = ["stinger", "propolis_bomber", "nectar_sprayer", "lightning_flower"]
-	
-	for i in range(tower_positions.size()):
-		var tower_pos = tower_positions[i]
-		
-		# Randomly select tower type
-		var random_tower_type = tower_types[randi() % tower_types.size()]
-		
-		# Create and place the tower
-		create_metaprogression_tower(random_tower_type, tower_pos, field_number, i + 1)
-		
-		print("Placed %s at position %s in field %d" % [random_tower_type, tower_pos, field_number])
+func create_field_label(field_background: ColorRect, world_pos: Vector2, field_number: int):
+	"""Create a label for the metaprogression field"""
+	var label = Label.new()
+	label.name = "FieldLabel"
+	label.text = "Field " + str(field_number)
+	label.position = Vector2(8, 20)  # Position within the field
+	label.size = Vector2(48, 24)
+	label.add_theme_font_size_override("font_size", 12)
+	label.add_theme_color_override("font_color", Color.WHITE)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	field_background.add_child(label)
 
-func create_metaprogression_tower(tower_type: String, position: Vector2, field_number: int, tower_index: int):
-	"""Create a tower for metaprogression field"""
-	print("Creating metaprogression tower: %s at %s" % [tower_type, position])
-	
-	# Create tower instance based on type (using new tower types)
-	var tower_script = null
-	match tower_type:
-		"stinger":
-			tower_script = load("res://scripts/StingerTower.gd")
-		"propolis_bomber":
-			tower_script = load("res://scripts/PropolisBomberTower.gd")
-		"nectar_sprayer":
-			tower_script = load("res://scripts/NectarSprayerTower.gd")
-		"lightning_flower":
-			tower_script = load("res://scripts/LightningFlowerTower.gd")
-		_:
-			tower_script = load("res://scripts/StingerTower.gd")
-	
-	if tower_script:
-		var tower = tower_script.new() as Tower
-		
-		# Set tower properties
-		tower.tower_name = tower_type.replace("_", " ").capitalize()
-		tower.global_position = position
-		
-		# Set proper tower names for display
-		match tower_type:
-			"stinger":
-				tower.tower_name = "Stinger"
-			"propolis_bomber":
-				tower.tower_name = "Propolis Bomber"
-			"nectar_sprayer":
-				tower.tower_name = "Nectar Sprayer"
-			"lightning_flower":
-				tower.tower_name = "Lightning Flower"
-		
-		# Make towers slightly different for visual variety
-		tower.damage = 10.0 + (field_number * 2.0) + (tower_index * 1.0)
-		tower.range = 80.0 + (field_number * 10.0)
-		tower.attack_speed = 1.5 - (field_number * 0.1)
-		
-		# Add to scene
-		$UI.add_child(tower)
-		
-		# Add to tower placer for management
-		if tower_placer:
-			tower_placer.placed_towers.append(tower)
-			tower.tower_destroyed.connect(tower_placer._on_tower_destroyed)
-		
-		# Create visual indicator for metaprogression towers
-		create_tower_metaprogression_indicator(tower, field_number, tower_index)
-		
-		print("Metaprogression tower created: %s at %s" % [tower.tower_name, position])
-
-func create_tower_metaprogression_indicator(tower: Tower, field_number: int, tower_index: int):
-	"""Create a visual indicator for metaprogression towers"""
-	var indicator = ColorRect.new()
-	indicator.name = "MetaprogressionIndicator_%d_%d" % [field_number, tower_index]
-	indicator.size = Vector2(8, 8)
-	indicator.position = tower.global_position + Vector2(-4, -4)
-	indicator.color = Color.CYAN
-	indicator.z_index = 10  # Above everything else
-	$UI.add_child(indicator)
-	
-	print("Metaprogression indicator created for tower in field %d" % field_number)
+# Metaprogression fields are now empty by design
+# Towers will be added later through the metaprogression system
