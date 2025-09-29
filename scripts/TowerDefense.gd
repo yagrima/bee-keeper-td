@@ -2134,24 +2134,30 @@ func handle_tower_hotkey(tower_type: String, tower_name: String):
 		tower_placer.cancel_placement()
 		# Clean up any mouse following system
 		cleanup_mouse_following_system()
+		# Force cleanup of any remaining ephemeral towers
+		force_cleanup_ephemeral_towers()
+		force_cleanup_range_indicators()
 		# Verify cleanup was successful
 		verify_cleanup_success()
 		return
 	
-	# Check if we're already holding a tower (mouse following mode)
-	if picked_up_tower != null:
-		print("Already holding a tower, trying to place it")
-		# Try to place the picked up tower at mouse position
-		var mouse_pos = get_global_mouse_position()
-		if try_place_picked_up_tower(mouse_pos):
-			print("Tower placed successfully via hotkey")
-		else:
-			print("Failed to place tower, returning to original position")
-			return_picked_up_tower()
-		return
+	# Start normal tower placement system
+	start_normal_tower_placement(tower_type, tower_name)
+
+func start_normal_tower_placement(tower_type: String, tower_name: String):
+	"""Start normal tower placement system using tower_placer"""
+	print("=== STARTING NORMAL TOWER PLACEMENT ===")
+	print("Tower type: %s, Tower name: %s" % [tower_type, tower_name])
 	
-	# Start unified tower placement system
-	start_unified_tower_placement(tower_type, tower_name)
+	# Clean up any existing mouse following system first
+	cleanup_mouse_following_system()
+	
+	# Use the existing tower_placer system
+	if tower_placer:
+		tower_placer.start_tower_placement(tower_type)
+		print("Normal tower placement started for: %s" % tower_name)
+	else:
+		print("ERROR: tower_placer is null!")
 
 func cleanup_mouse_following_system():
 	"""Clean up any existing mouse following system"""
