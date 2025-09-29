@@ -1850,6 +1850,9 @@ func pickup_metaprogression_tower(tower: Tower):
 	# Hide the original tower
 	tower.visible = false
 	
+	# Show range indicator at mouse position
+	show_tower_range_at_mouse_position(tower)
+	
 	# Create a visual indicator that we're holding a tower
 	create_pickup_indicator(tower)
 	
@@ -1949,8 +1952,9 @@ func place_picked_up_tower(position: Vector2):
 	# Clear picked up tower
 	picked_up_tower = null
 	
-	# Remove pickup indicator
+	# Remove pickup indicator and range indicator
 	remove_pickup_indicator()
+	clear_range_indicator()
 	
 	print("Metaprogression tower placed successfully!")
 
@@ -1967,8 +1971,9 @@ func return_picked_up_tower():
 	# Clear picked up tower
 	picked_up_tower = null
 	
-	# Remove pickup indicator
+	# Remove pickup indicator and range indicator
 	remove_pickup_indicator()
+	clear_range_indicator()
 	
 	print("Metaprogression tower returned to original position")
 
@@ -1982,6 +1987,49 @@ func remove_pickup_indicator():
 	"""Remove pickup indicator"""
 	print("Removing pickup indicator")
 	# Implementation depends on desired visual feedback
+
+func show_tower_range_at_mouse_position(tower: Tower):
+	"""Show range indicator at mouse position for picked up tower"""
+	print("=== SHOWING TOWER RANGE AT MOUSE POSITION ===")
+	
+	# Validate tower before proceeding
+	if not tower or not is_instance_valid(tower):
+		print("ERROR: Invalid tower in show_tower_range_at_mouse_position")
+		return
+	
+	print("Tower: ", tower.tower_name, " with range: ", tower.range)
+	
+	# Remove existing range indicator
+	clear_range_indicator()
+	
+	# Wait one frame to ensure cleanup is complete
+	await get_tree().process_frame
+	
+	# Double-check tower is still valid after frame wait
+	if not tower or not is_instance_valid(tower):
+		print("ERROR: Tower became invalid during range indicator creation")
+		return
+	
+	print("Creating new range indicator for tower: ", tower.tower_name)
+	
+	# Create new range indicator
+	range_indicator = Node2D.new()
+	range_indicator.name = "RangeIndicator_" + str(tower.get_instance_id())
+	
+	# Create round range indicator using a custom drawing node
+	var range_circle = create_round_range_indicator(tower.range)
+	range_indicator.add_child(range_circle)
+	
+	# Position at mouse position
+	range_indicator.global_position = get_global_mouse_position()
+	range_indicator.z_index = 5  # Ensure visibility
+	
+	# Add to scene
+	var ui_canvas = $UI
+	ui_canvas.add_child(range_indicator)
+	
+	print("Range indicator created: ", range_indicator.name, " at mouse position: ", range_indicator.global_position, " with range: ", tower.range)
+	print("=== RANGE INDICATOR SETUP COMPLETE ===")
 
 func create_field_border(field_background: ColorRect, world_pos: Vector2):
 	"""Create a border around the metaprogression field"""
