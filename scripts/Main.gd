@@ -1,6 +1,7 @@
 extends Control
 
 @onready var play_button = $UI/MenuContainer/PlayButton
+@onready var td_button = $UI/MenuContainer/TDButton
 @onready var settlement_button = $UI/MenuContainer/SettlementButton
 @onready var load_button = $UI/MenuContainer/LoadButton
 @onready var quit_button = $UI/MenuContainer/QuitButton
@@ -60,6 +61,8 @@ func _ready():
 	# Connect button signals with null checks
 	if play_button:
 		play_button.pressed.connect(_on_play_pressed)
+	if td_button:
+		td_button.pressed.connect(_on_td_pressed)
 	if settlement_button:
 		settlement_button.pressed.connect(_on_settlement_pressed)
 	if load_button:
@@ -71,11 +74,17 @@ func _ready():
 	initialize_test_reminder_system()
 
 func _on_play_pressed():
-	print("Starting Tower Defense...")
+	print("Starting game flow...")
+	# TODO: Implement proper game flow (later this will go through meta progression)
+	# For now, go to settlement as starting point
+	SceneManager.goto_settlement()
+
+func _on_td_pressed():
+	print("Starting Tower Defense (Direct Access)...")
 	SceneManager.goto_tower_defense()
 
 func _on_settlement_pressed():
-	print("Opening Settlement...")
+	print("Opening Settlement (Direct Access)...")
 	SceneManager.goto_settlement()
 
 func _on_load_pressed():

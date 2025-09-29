@@ -33,11 +33,19 @@ horizontal_alignment = 1
 
 [node name="PlayButton" type="Button" parent="UI/MenuContainer"]
 layout_mode = 2
-text = "Play Tower Defense"
+text = "Spielen"
+
+[node name="TDButton" type="Button" parent="UI/MenuContainer"]
+layout_mode = 2
+text = "Tower Defense (Direct)"
 
 [node name="SettlementButton" type="Button" parent="UI/MenuContainer"]
 layout_mode = 2
-text = "Visit Settlement"
+text = "Settlement (Direct)"
+
+[node name="LoadButton" type="Button" parent="UI/MenuContainer"]
+layout_mode = 2
+text = "Load Game"
 
 [node name="QuitButton" type="Button" parent="UI/MenuContainer"]
 layout_mode = 2
