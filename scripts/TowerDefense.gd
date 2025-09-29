@@ -438,6 +438,9 @@ func _input(event):
 	elif HotkeyManager.is_hotkey_pressed(event, "start_wave"):
 		# Start wave
 		_on_start_wave_pressed()
+	elif event.keycode == KEY_T and event.pressed:
+		# Test tower positioning system
+		test_tower_positioning()
 	elif HotkeyManager.is_hotkey_pressed(event, "save_game"):
 		# Save game
 		_on_save_game_pressed()
@@ -2105,21 +2108,12 @@ func create_random_tower_at_mouse_position():
 		print("Failed to create random tower")
 
 func handle_tower_hotkey(tower_type: String, tower_name: String):
-	"""Handle tower hotkey with menu toggle logic"""
+	"""Handle tower hotkey with unified logic"""
 	print("=== HANDLING TOWER HOTKEY ===")
 	print("Tower type: %s, Tower name: %s" % [tower_type, tower_name])
 	
-	# Check if we're already holding a tower (mouse following mode)
-	if picked_up_tower != null:
-		print("Already holding a tower, trying to place it")
-		# Try to place the picked up tower at mouse position
-		var mouse_pos = get_global_mouse_position()
-		if try_place_picked_up_tower(mouse_pos):
-			print("Tower placed successfully via hotkey")
-		else:
-			print("Failed to place tower, returning to original position")
-			return_picked_up_tower()
-		return
+	# Clean up any existing mouse following system
+	cleanup_mouse_following_system()
 	
 	# Check if we're already in placement mode for this tower type
 	if is_in_tower_placement and current_tower_type == tower_type:
@@ -2127,16 +2121,121 @@ func handle_tower_hotkey(tower_type: String, tower_name: String):
 		tower_placer.cancel_placement()
 		return
 	
-	# Start tower placement mode (normal menu system, not mouse following)
-	print("Starting tower placement mode for: %s" % tower_type)
-	tower_placer.start_tower_placement(tower_type)
+	# Start unified tower placement system
+	start_unified_tower_placement(tower_type, tower_name)
+
+func cleanup_mouse_following_system():
+	"""Clean up any existing mouse following system"""
+	print("=== CLEANING UP MOUSE FOLLOWING SYSTEM ===")
 	
-	# Make sure we're not in mouse following mode
+	# Stop mouse following
+	stop_tower_following_mouse()
+	
+	# Clear picked up tower
 	if picked_up_tower != null:
-		print("Clearing picked up tower before starting placement mode")
-		stop_tower_following_mouse()
-		clear_range_indicator()
+		print("Clearing picked up tower: %s" % picked_up_tower.tower_name)
+		if is_instance_valid(picked_up_tower):
+			picked_up_tower.queue_free()
 		picked_up_tower = null
+	
+	# Clear range indicator
+	clear_range_indicator()
+	
+	# Remove pickup indicator
+	remove_pickup_indicator()
+	
+	print("Mouse following system cleaned up")
+
+func start_unified_tower_placement(tower_type: String, tower_name: String):
+	"""Start unified tower placement system"""
+	print("=== STARTING UNIFIED TOWER PLACEMENT ===")
+	print("Tower type: %s, Tower name: %s" % [tower_type, tower_name])
+	
+	# Get current mouse position
+	var mouse_pos = get_global_mouse_position()
+	print("Mouse position: %s" % mouse_pos)
+	
+	# Create tower at mouse position
+	var tower = create_unified_tower(tower_name, mouse_pos)
+	if not tower:
+		print("Failed to create unified tower")
+		return
+	
+	# Set up mouse following
+	picked_up_tower = tower
+	start_tower_following_mouse()
+	
+	# Show range indicator
+	show_tower_range_at_mouse_position(tower)
+	
+	print("Unified tower placement started for: %s" % tower_name)
+
+func create_unified_tower(tower_name: String, position: Vector2) -> Tower:
+	"""Create a tower with unified positioning system"""
+	print("=== CREATING UNIFIED TOWER ===")
+	print("Tower name: %s, Position: %s" % [tower_name, position])
+	
+	var tower: Tower
+	var tower_type: String
+	
+	# Determine tower type from name
+	if "Stinger" in tower_name:
+		tower = StingerTower.new()
+		tower_type = "stinger"
+	elif "Propolis Bomber" in tower_name:
+		tower = PropolisBomberTower.new()
+		tower_type = "propolis_bomber"
+	elif "Nectar Sprayer" in tower_name:
+		tower = NectarSprayerTower.new()
+		tower_type = "nectar_sprayer"
+	elif "Lightning Flower" in tower_name:
+		tower = LightningFlowerTower.new()
+		tower_type = "lightning_flower"
+	else:
+		print("Unknown tower name: %s" % tower_name)
+		return null
+	
+	if not tower:
+		print("Failed to create tower instance")
+		return null
+	
+	# Set tower properties
+	tower.name = "UnifiedTower_" + tower_type
+	tower.tower_name = tower_name
+	
+	# Add to main scene first
+	add_child(tower)
+	
+	# Set position after adding to scene
+	tower.global_position = position
+	
+	print("Unified tower created: %s at %s" % [tower_name, tower.global_position])
+	
+	return tower
+
+func test_tower_positioning():
+	"""Test function to validate tower positioning system"""
+	print("=== TESTING TOWER POSITIONING SYSTEM ===")
+	
+	# Test mouse position
+	var mouse_pos = get_global_mouse_position()
+	print("Current mouse position: %s" % mouse_pos)
+	
+	# Test viewport size
+	var viewport_size = get_viewport().get_visible_rect().size
+	print("Viewport size: %s" % viewport_size)
+	
+	# Test if mouse position is within viewport
+	if mouse_pos.x >= 0 and mouse_pos.x <= viewport_size.x and mouse_pos.y >= 0 and mouse_pos.y <= viewport_size.y:
+		print("Mouse position is within viewport bounds")
+	else:
+		print("WARNING: Mouse position is outside viewport bounds")
+	
+	# Test coordinate system
+	print("Global mouse position: %s" % get_global_mouse_position())
+	print("Local mouse position: %s" % get_local_mouse_position())
+	
+	print("=== TOWER POSITIONING TEST COMPLETE ===")
 
 func create_tower_at_mouse_position(tower_name: String):
 	"""Create a tower at mouse position via hotkey"""
@@ -2206,14 +2305,13 @@ func _process(delta):
 		# Update tower position to mouse position
 		picked_up_tower.global_position = mouse_pos
 		
-		# Debug: Print position changes
-		if old_pos != mouse_pos:
+		# Debug: Print position changes (less verbose)
+		if old_pos.distance_to(mouse_pos) > 10.0:  # Only print if moved significantly
 			print("Tower moved from %s to %s" % [old_pos, mouse_pos])
 		
 		# Update range indicator position as well
 		if range_indicator != null and is_instance_valid(range_indicator):
 			range_indicator.global_position = mouse_pos
-			print("Range indicator moved to: %s" % mouse_pos)
 	else:
 		# If we're in normal placement mode, stop the process
 		if is_in_tower_placement:
@@ -2256,11 +2354,14 @@ func show_tower_range_at_mouse_position(tower: Tower):
 	range_indicator.global_position = mouse_pos
 	range_indicator.z_index = 5  # Ensure visibility
 	
-	# Add to main scene instead of UI canvas
+	# Add to main scene
 	add_child(range_indicator)
 	
 	# Force position update after adding to scene
 	range_indicator.global_position = mouse_pos
+	
+	# Verify position was set correctly
+	print("Range indicator final position: %s" % range_indicator.global_position)
 	
 	print("Range indicator created: ", range_indicator.name, " at mouse position: ", range_indicator.global_position, " with range: ", tower.range)
 	print("=== RANGE INDICATOR SETUP COMPLETE ===")
