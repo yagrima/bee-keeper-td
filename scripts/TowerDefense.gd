@@ -2141,6 +2141,10 @@ func handle_tower_hotkey(tower_type: String, tower_name: String):
 		force_cleanup_range_indicators()
 		# Additional cleanup for W/E towers
 		force_cleanup_all_ephemeral_objects()
+		# Wait for cleanup to complete
+		await get_tree().process_frame
+		# Force cleanup again after frame
+		force_cleanup_all_ephemeral_objects()
 		# Verify cleanup was successful
 		verify_cleanup_success()
 		return
@@ -2332,37 +2336,84 @@ func force_cleanup_all_ephemeral_objects():
 			range_indicator.queue_free()
 		range_indicator = null
 	
-	# Clean up ALL nodes with "UnifiedTower" in name
+	# ULTRA AGGRESSIVE CLEANUP - Remove ALL nodes that could be ephemeral
 	var all_nodes = get_tree().get_nodes_in_group("")
-	for node in all_nodes:
-		if node.name.begins_with("UnifiedTower"):
-			print("Force cleaning ephemeral tower: %s" % node.name)
-			node.queue_free()
+	var nodes_to_remove = []
 	
-	# Clean up ALL nodes with "RangeIndicator" in name
 	for node in all_nodes:
-		if node.name.begins_with("RangeIndicator"):
-			print("Force cleaning range indicator: %s" % node.name)
+		var node_name = node.name
+		# Check for any tower-related names
+		if (node_name.begins_with("UnifiedTower") or 
+			node_name.begins_with("RangeIndicator") or
+			node_name.begins_with("Stinger") or
+			node_name.begins_with("Propolis") or
+			node_name.begins_with("Nectar") or
+			node_name.begins_with("Lightning") or
+			"Tower" in node_name or
+			"Indicator" in node_name):
+			print("Force cleaning node: %s (type: %s)" % [node_name, node.get_class()])
+			nodes_to_remove.append(node)
+	
+	# Remove all identified nodes
+	for node in nodes_to_remove:
+		if is_instance_valid(node):
 			node.queue_free()
 	
 	# Clean up ALL children in main scene
+	var main_children_to_remove = []
 	for child in get_children():
-		if child.name.begins_with("UnifiedTower") or child.name.begins_with("RangeIndicator"):
-			print("Force cleaning child: %s" % child.name)
+		var child_name = child.name
+		if (child_name.begins_with("UnifiedTower") or 
+			child_name.begins_with("RangeIndicator") or
+			child_name.begins_with("Stinger") or
+			child_name.begins_with("Propolis") or
+			child_name.begins_with("Nectar") or
+			child_name.begins_with("Lightning") or
+			"Tower" in child_name or
+			"Indicator" in child_name):
+			print("Force cleaning main child: %s" % child_name)
+			main_children_to_remove.append(child)
+	
+	for child in main_children_to_remove:
+		if is_instance_valid(child):
 			child.queue_free()
 	
 	# Clean up ALL children in UI canvas
 	var ui_canvas = $UI
 	if ui_canvas:
+		var ui_children_to_remove = []
 		for child in ui_canvas.get_children():
-			if child.name.begins_with("UnifiedTower") or child.name.begins_with("RangeIndicator"):
-				print("Force cleaning UI child: %s" % child.name)
+			var child_name = child.name
+			if (child_name.begins_with("UnifiedTower") or 
+				child_name.begins_with("RangeIndicator") or
+				child_name.begins_with("Stinger") or
+				child_name.begins_with("Propolis") or
+				child_name.begins_with("Nectar") or
+				child_name.begins_with("Lightning") or
+				"Tower" in child_name or
+				"Indicator" in child_name):
+				print("Force cleaning UI child: %s" % child_name)
+				ui_children_to_remove.append(child)
+		
+		for child in ui_children_to_remove:
+			if is_instance_valid(child):
 				child.queue_free()
 	
 	# Stop any processing
 	set_process(false)
 	
+	# Force garbage collection
+	call_deferred("_force_garbage_collection")
+	
 	print("=== FORCE CLEANUP ALL EPHEMERAL OBJECTS COMPLETE ===")
+
+func _force_garbage_collection():
+	"""Force garbage collection to remove queued objects"""
+	print("=== FORCING GARBAGE COLLECTION ===")
+	# Wait a frame then check again
+	await get_tree().process_frame
+	await get_tree().process_frame
+	print("=== GARBAGE COLLECTION COMPLETE ===")
 
 func start_unified_tower_placement(tower_type: String, tower_name: String):
 	"""Start unified tower placement system"""
