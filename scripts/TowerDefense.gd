@@ -2107,13 +2107,7 @@ func handle_tower_hotkey(tower_type: String, tower_name: String):
 	print("=== HANDLING TOWER HOTKEY ===")
 	print("Tower type: %s, Tower name: %s" % [tower_type, tower_name])
 	
-	# Check if we're already in placement mode for this tower type
-	if is_in_tower_placement and current_tower_type == tower_type:
-		print("Already in placement mode for %s, canceling placement" % tower_type)
-		tower_placer.cancel_placement()
-		return
-	
-	# Check if we're already holding a tower
+	# Check if we're already holding a tower (mouse following mode)
 	if picked_up_tower != null:
 		print("Already holding a tower, trying to place it")
 		# Try to place the picked up tower at mouse position
@@ -2125,9 +2119,22 @@ func handle_tower_hotkey(tower_type: String, tower_name: String):
 			return_picked_up_tower()
 		return
 	
-	# Start tower placement mode
+	# Check if we're already in placement mode for this tower type
+	if is_in_tower_placement and current_tower_type == tower_type:
+		print("Already in placement mode for %s, canceling placement" % tower_type)
+		tower_placer.cancel_placement()
+		return
+	
+	# Start tower placement mode (normal menu system, not mouse following)
 	print("Starting tower placement mode for: %s" % tower_type)
 	tower_placer.start_tower_placement(tower_type)
+	
+	# Make sure we're not in mouse following mode
+	if picked_up_tower != null:
+		print("Clearing picked up tower before starting placement mode")
+		stop_tower_following_mouse()
+		clear_range_indicator()
+		picked_up_tower = null
 
 func create_tower_at_mouse_position(tower_name: String):
 	"""Create a tower at mouse position via hotkey"""
@@ -2184,7 +2191,8 @@ func stop_tower_following_mouse():
 
 func _process(delta):
 	"""Update picked up tower position to follow mouse"""
-	if picked_up_tower != null and is_instance_valid(picked_up_tower):
+	# Only run if we have a picked up tower and we're not in normal placement mode
+	if picked_up_tower != null and is_instance_valid(picked_up_tower) and not is_in_tower_placement:
 		var mouse_pos = get_global_mouse_position()
 		var old_pos = picked_up_tower.global_position
 		
@@ -2198,6 +2206,10 @@ func _process(delta):
 		# Update range indicator position as well
 		if range_indicator != null and is_instance_valid(range_indicator):
 			range_indicator.global_position = mouse_pos
+	else:
+		# If we're in normal placement mode, stop the process
+		if is_in_tower_placement:
+			set_process(false)
 
 func show_tower_range_at_mouse_position(tower: Tower):
 	"""Show range indicator at mouse position for picked up tower"""
