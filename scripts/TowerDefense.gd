@@ -422,13 +422,13 @@ func _input(event):
 	
 	# Use dynamic hotkey system
 	if HotkeyManager.is_hotkey_pressed(event, "place_stinger"):
-		create_tower_at_mouse_position("Stinger Tower")
+		handle_tower_hotkey("stinger", "Stinger Tower")
 	elif HotkeyManager.is_hotkey_pressed(event, "place_propolis_bomber"):
-		create_tower_at_mouse_position("Propolis Bomber Tower")
+		handle_tower_hotkey("propolis_bomber", "Propolis Bomber Tower")
 	elif HotkeyManager.is_hotkey_pressed(event, "place_nectar_sprayer"):
-		create_tower_at_mouse_position("Nectar Sprayer Tower")
+		handle_tower_hotkey("nectar_sprayer", "Nectar Sprayer Tower")
 	elif HotkeyManager.is_hotkey_pressed(event, "place_lightning_flower"):
-		create_tower_at_mouse_position("Lightning Flower Tower")
+		handle_tower_hotkey("lightning_flower", "Lightning Flower Tower")
 	elif HotkeyManager.is_hotkey_pressed(event, "place_tower"):
 		# Toggle tower placement mode with current tower
 		if is_in_tower_placement:
@@ -1967,8 +1967,14 @@ func place_picked_up_tower(position: Vector2):
 	if picked_up_tower == null:
 		return
 	
-	# Set tower position
-	picked_up_tower.position = position
+	# Align position to grid (32x32 tiles)
+	var grid_pos = Vector2(int(position.x / 32), int(position.y / 32))
+	var aligned_position = Vector2(grid_pos.x * 32, grid_pos.y * 32)
+	
+	print("Original position: %s, Grid position: %s, Aligned position: %s" % [position, grid_pos, aligned_position])
+	
+	# Set tower position to aligned grid position
+	picked_up_tower.position = aligned_position
 	
 	# Make tower visible
 	picked_up_tower.visible = true
@@ -2095,6 +2101,33 @@ func create_random_tower_at_mouse_position():
 		print("Random tower created and picked up: %s" % random_tower_name)
 	else:
 		print("Failed to create random tower")
+
+func handle_tower_hotkey(tower_type: String, tower_name: String):
+	"""Handle tower hotkey with menu toggle logic"""
+	print("=== HANDLING TOWER HOTKEY ===")
+	print("Tower type: %s, Tower name: %s" % [tower_type, tower_name])
+	
+	# Check if we're already in placement mode for this tower type
+	if is_in_tower_placement and current_tower_type == tower_type:
+		print("Already in placement mode for %s, canceling placement" % tower_type)
+		tower_placer.cancel_placement()
+		return
+	
+	# Check if we're already holding a tower
+	if picked_up_tower != null:
+		print("Already holding a tower, trying to place it")
+		# Try to place the picked up tower at mouse position
+		var mouse_pos = get_global_mouse_position()
+		if try_place_picked_up_tower(mouse_pos):
+			print("Tower placed successfully via hotkey")
+		else:
+			print("Failed to place tower, returning to original position")
+			return_picked_up_tower()
+		return
+	
+	# Start tower placement mode
+	print("Starting tower placement mode for: %s" % tower_type)
+	tower_placer.start_tower_placement(tower_type)
 
 func create_tower_at_mouse_position(tower_name: String):
 	"""Create a tower at mouse position via hotkey"""
