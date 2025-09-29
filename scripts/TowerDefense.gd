@@ -71,7 +71,7 @@ func _ready():
 
 	# Connect to hotkey changes to update button texts
 	HotkeyManager.hotkey_changed.connect(_on_hotkey_changed)
-	
+
 	# Connect to GameManager signals for real-time UI updates
 	GameManager.resources_changed.connect(_on_resources_changed)
 
@@ -79,6 +79,9 @@ func _ready():
 	if start_wave_button:
 		start_wave_button.mouse_entered.connect(_on_start_wave_button_mouse_entered)
 		start_wave_button.mouse_exited.connect(_on_start_wave_button_mouse_exited)
+
+	# Connect exit signal for auto-save
+	tree_exiting.connect(_on_tree_exiting)
 
 	setup_basic_map()
 	setup_tower_placer()
@@ -91,8 +94,8 @@ func _ready():
 	setup_metaprogression_fields()
 	update_ui()
 
-	# Check for pending save data to load
-	check_for_pending_save_data()
+	# Auto-load save data when entering the game
+	auto_load_game()
 
 	# Integration tests available via run_lightning_flower_integration_test() if needed
 
@@ -449,18 +452,6 @@ func _input(event):
 	elif HotkeyManager.is_hotkey_pressed(event, "start_wave"):
 		# Start wave
 		_on_start_wave_pressed()
-	elif HotkeyManager.is_hotkey_pressed(event, "save_game"):
-		# Save game
-		_on_save_game_pressed()
-	elif HotkeyManager.is_hotkey_pressed(event, "load_game"):
-		# Load game
-		_on_load_game_pressed()
-	elif HotkeyManager.is_hotkey_pressed(event, "quick_save"):
-		# Quick save
-		_on_quick_save_pressed()
-	elif HotkeyManager.is_hotkey_pressed(event, "quick_load"):
-		# Quick load
-		_on_quick_load_pressed()
 	elif HotkeyManager.is_hotkey_pressed(event, "speed_toggle"):
 		# Toggle speed
 		_on_speed_button_pressed()
@@ -709,18 +700,21 @@ func _on_wave_started(wave_number: int):
 func _on_wave_completed(wave_number: int, enemies_killed: int):
 	print("Wave ", wave_number, " completed! Killed ", enemies_killed, " enemies")
 	current_wave += 1
-	
+
+	# Auto-save after each wave
+	auto_save_game("Wave %d completed" % wave_number)
+
 	# Check if all waves are completed
 	if current_wave > 5:
 		_on_all_waves_completed()
 		return
-	
+
 	# Stop the wave composition timer
 	stop_wave_composition_timer()
-	
+
 	# Start automatic next wave after delay based on speed mode
 	start_automatic_next_wave()
-	
+
 	update_ui()  # Update UI for next wave
 
 func _on_enemy_spawned(enemy: Enemy):
@@ -728,13 +722,16 @@ func _on_enemy_spawned(enemy: Enemy):
 
 func _on_all_waves_completed():
 	print("All waves completed! Victory!")
-	
+
+	# Auto-save after completing all waves
+	auto_save_game("All waves completed - Victory!")
+
 	# Stop the wave composition timer
 	stop_wave_composition_timer()
-	
+
 	# Stop any auto wave timer
 	stop_auto_wave_timer()
-	
+
 	# Delay victory screen by 0.01 seconds to allow last enemy to despawn
 	var timer = get_tree().create_timer(0.01)
 	timer.timeout.connect(show_victory_screen)
@@ -1335,196 +1332,12 @@ func load_wave_data(wave_data: Dictionary):
 		# Note: We don't restore active waves to avoid complications
 		print("Loaded wave data: Wave ", current_wave)
 
-func _on_save_game_pressed():
-	"""Handle save game hotkey"""
-	show_save_dialog()
-
-func _on_load_game_pressed():
-	"""Handle load game hotkey"""
-	show_load_dialog()
-
-func _on_quick_save_pressed():
-	"""Handle quick save hotkey"""
-	quick_save()
-
-func _on_quick_load_pressed():
-	"""Handle quick load hotkey"""
-	quick_load()
-
-func quick_save():
-	"""Quick save to a default slot"""
-	var success = GameManager.save_game("quick_save")
-	if success:
-		show_save_notification("Quick Save", "Game saved successfully!")
-	else:
-		show_save_notification("Quick Save", "Failed to save game!")
-
-func quick_load():
-	"""Quick load from default slot"""
-	if GameManager.save_file_exists("quick_save"):
-		var success = GameManager.load_game("quick_save")
-		if success:
-			show_save_notification("Quick Load", "Game loaded successfully!")
-			# Reload the scene to apply loaded data
-			call_deferred("_reload_scene_with_save_data")
-		else:
-			show_save_notification("Quick Load", "Failed to load game!")
-	else:
-		show_save_notification("Quick Load", "No quick save found!")
-
-func _reload_scene_with_save_data():
-	"""Reload the scene and apply save data"""
-	# This will be called after the scene is reloaded
-	# The save data will be applied by the SaveManager
-	SceneManager.goto_tower_defense()
-
-func show_save_dialog():
-	"""Show save game dialog"""
-	# Create save dialog
-	var save_dialog = AcceptDialog.new()
-	save_dialog.title = "Save Game"
-	save_dialog.size = Vector2(400, 200)
-	
-	# Create input field for save name
-	var vbox = VBoxContainer.new()
-	save_dialog.add_child(vbox)
-	
-	var label = Label.new()
-	label.text = "Enter save name:"
-	vbox.add_child(label)
-	
-	var input = LineEdit.new()
-	input.placeholder_text = "Save name"
-	input.text = "save_" + str(Time.get_unix_time_from_system())
-	vbox.add_child(input)
-	
-	# Create buttons
-	var button_container = HBoxContainer.new()
-	vbox.add_child(button_container)
-	
-	var save_button = Button.new()
-	save_button.text = "Save"
-	save_button.pressed.connect(func(): _save_with_name(input.text, save_dialog))
-	button_container.add_child(save_button)
-	
-	var cancel_button = Button.new()
-	cancel_button.text = "Cancel"
-	cancel_button.pressed.connect(save_dialog.queue_free)
-	button_container.add_child(cancel_button)
-	
-	# Add to scene
-	var ui_canvas = $UI
-	ui_canvas.add_child(save_dialog)
-	
-	# Center the dialog
-	var window_size = Vector2(get_viewport().get_visible_rect().size)
-	save_dialog.position = (window_size - Vector2(save_dialog.size)) / 2
-	
-	# Focus the input field
-	input.grab_focus()
-
-func show_load_dialog():
-	"""Show load game dialog"""
-	# Create load dialog
-	var load_dialog = AcceptDialog.new()
-	load_dialog.title = "Load Game"
-	load_dialog.size = Vector2(500, 400)
-	
-	# Create scrollable list of save files
-	var vbox = VBoxContainer.new()
-	load_dialog.add_child(vbox)
-	
-	var label = Label.new()
-	label.text = "Select save file to load:"
-	vbox.add_child(label)
-	
-	var scroll_container = ScrollContainer.new()
-	scroll_container.size = Vector2(450, 250)
-	vbox.add_child(scroll_container)
-	
-	var save_list = VBoxContainer.new()
-	scroll_container.add_child(save_list)
-	
-	# Get save files
-	var save_files = GameManager.get_save_files()
-	
-	if save_files.is_empty():
-		var no_saves_label = Label.new()
-		no_saves_label.text = "No save files found"
-		save_list.add_child(no_saves_label)
-	else:
-		for save_name in save_files:
-			var save_info = GameManager.get_save_file_info(save_name)
-			var save_button = Button.new()
-			
-			# Format save info
-			var timestamp = Time.get_datetime_string_from_unix_time(save_info.get("timestamp", 0))
-			var honey = save_info.get("honey", 0)
-			var level = save_info.get("player_level", 1)
-			
-			save_button.text = save_name + " - Level " + str(level) + " - " + str(honey) + " Honey - " + timestamp
-			save_button.pressed.connect(func(): _load_save_file(save_name, load_dialog))
-			save_list.add_child(save_button)
-	
-	# Create buttons
-	var button_container = HBoxContainer.new()
-	vbox.add_child(button_container)
-	
-	var cancel_button = Button.new()
-	cancel_button.text = "Cancel"
-	cancel_button.pressed.connect(load_dialog.queue_free)
-	button_container.add_child(cancel_button)
-	
-	# Add to scene
-	var ui_canvas = $UI
-	ui_canvas.add_child(load_dialog)
-	
-	# Center the dialog
-	var window_size = Vector2(get_viewport().get_visible_rect().size)
-	load_dialog.position = (window_size - Vector2(load_dialog.size)) / 2
-
-func _save_with_name(save_name: String, dialog: AcceptDialog):
-	"""Save game with specified name"""
-	if save_name.strip_edges() == "":
-		show_save_notification("Save Error", "Please enter a save name!")
-		return
-	
-	var success = GameManager.save_game(save_name)
-	if success:
-		show_save_notification("Save Game", "Game saved as: " + save_name)
-		dialog.queue_free()
-	else:
-		show_save_notification("Save Error", "Failed to save game!")
-
-func _load_save_file(save_name: String, dialog: AcceptDialog):
-	"""Load specified save file"""
-	var success = GameManager.load_game(save_name)
-	if success:
-		show_save_notification("Load Game", "Game loaded: " + save_name)
-		dialog.queue_free()
-		# Reload the scene to apply loaded data
-		call_deferred("_reload_scene_with_save_data")
-	else:
-		show_save_notification("Load Error", "Failed to load game!")
-
-func show_save_notification(title: String, message: String):
-	"""Show a save/load notification"""
-	var notification = AcceptDialog.new()
-	notification.title = title
-	notification.dialog_text = message
-	notification.size = Vector2(300, 100)
-	
-	# Add to scene
-	var ui_canvas = $UI
-	ui_canvas.add_child(notification)
-	
-	# Center the notification
-	var window_size = Vector2(get_viewport().get_visible_rect().size)
-	notification.position = (window_size - Vector2(notification.size)) / 2
-	
-	# Auto-close after 2 seconds
-	var timer = get_tree().create_timer(2.0)
-	timer.timeout.connect(notification.queue_free)
+# Manual Save/Load functions removed - Auto-save/load system active
+# Saves happen automatically:
+# - On game start (auto-load from cloud/local)
+# - After each wave completion
+# - After all waves completed (victory)
+# - On exiting Tower Defense scene
 
 func check_for_pending_save_data():
 	"""Check if there's pending save data to load"""
@@ -1532,6 +1345,52 @@ func check_for_pending_save_data():
 		var save_data = SaveManager.get_pending_tower_defense_data()
 		load_tower_defense_data(save_data)
 		print("Loaded pending tower defense save data")
+
+# =============================================================================
+# AUTO-SAVE / AUTO-LOAD SYSTEM
+# =============================================================================
+
+func auto_load_game():
+	"""
+	Automatically load game when entering Tower Defense
+	Tries cloud first, then local fallback
+	"""
+	print("🔄 Auto-loading game data...")
+
+	if SupabaseClient.is_authenticated() and SaveManager.CLOUD_SYNC_ENABLED:
+		print("☁️ Loading from cloud...")
+		var success = await SaveManager.load_from_cloud()
+		if success:
+			print("✅ Cloud data loaded successfully")
+			return
+		else:
+			print("⚠️ Cloud load failed, trying local...")
+
+	# Fallback to local save
+	if SaveManager.save_file_exists("main"):
+		var success = SaveManager.load_game("main")
+		if success:
+			print("✅ Local data loaded successfully")
+		else:
+			print("ℹ️ No save data found, starting fresh")
+	else:
+		print("ℹ️ No save data found, starting fresh")
+
+func auto_save_game(reason: String = "Auto-save"):
+	"""
+	Automatically save game with cloud sync
+	Called after each wave and on exit
+	"""
+	print("💾 Auto-saving: %s" % reason)
+	SaveManager.save_game("main")
+
+func _on_tree_exiting():
+	"""
+	Called when scene is about to be removed from tree
+	Auto-save before leaving
+	"""
+	print("👋 Exiting Tower Defense, auto-saving...")
+	auto_save_game("Exiting Tower Defense")
 
 func start_wave_composition_timer():
 	"""Start timer to update wave composition in real-time"""
