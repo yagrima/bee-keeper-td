@@ -441,6 +441,9 @@ func _input(event):
 	elif event.keycode == KEY_T and event.pressed:
 		# Test tower positioning system
 		test_tower_positioning()
+	elif event.keycode == KEY_Y and event.pressed:
+		# Test tower menu toggle system
+		test_tower_menu_toggle()
 	elif HotkeyManager.is_hotkey_pressed(event, "save_game"):
 		# Save game
 		_on_save_game_pressed()
@@ -2131,6 +2134,14 @@ func handle_tower_hotkey(tower_type: String, tower_name: String):
 	print("=== HANDLING TOWER HOTKEY ===")
 	print("Tower type: %s, Tower name: %s" % [tower_type, tower_name])
 	
+	# Check if we're already in placement mode for this tower type (toggle off)
+	if is_in_tower_placement and current_tower_type == tower_type:
+		print("Already in placement mode for %s, canceling placement" % tower_type)
+		tower_placer.cancel_placement()
+		# Clean up any mouse following system
+		cleanup_mouse_following_system()
+		return
+	
 	# Check if we're already holding a tower (mouse following mode)
 	if picked_up_tower != null:
 		print("Already holding a tower, trying to place it")
@@ -2141,12 +2152,6 @@ func handle_tower_hotkey(tower_type: String, tower_name: String):
 		else:
 			print("Failed to place tower, returning to original position")
 			return_picked_up_tower()
-		return
-	
-	# Check if we're already in placement mode for this tower type
-	if is_in_tower_placement and current_tower_type == tower_type:
-		print("Already in placement mode for %s, canceling placement" % tower_type)
-		tower_placer.cancel_placement()
 		return
 	
 	# Start unified tower placement system
@@ -2275,6 +2280,29 @@ func test_tower_positioning():
 	print("Local mouse position: %s" % get_local_mouse_position())
 	
 	print("=== TOWER POSITIONING TEST COMPLETE ===")
+
+func test_tower_menu_toggle():
+	"""Test function to validate tower menu toggle system"""
+	print("=== TESTING TOWER MENU TOGGLE SYSTEM ===")
+	
+	# Test current state
+	print("Current is_in_tower_placement: %s" % is_in_tower_placement)
+	print("Current current_tower_type: %s" % current_tower_type)
+	print("Current picked_up_tower: %s" % (picked_up_tower != null))
+	
+	# Test Q key toggle
+	print("Testing Q key toggle...")
+	handle_tower_hotkey("stinger", "Stinger Tower")
+	print("After Q press - is_in_tower_placement: %s" % is_in_tower_placement)
+	print("After Q press - picked_up_tower: %s" % (picked_up_tower != null))
+	
+	# Test Q key toggle again (should cancel)
+	print("Testing Q key toggle again (should cancel)...")
+	handle_tower_hotkey("stinger", "Stinger Tower")
+	print("After Q press again - is_in_tower_placement: %s" % is_in_tower_placement)
+	print("After Q press again - picked_up_tower: %s" % (picked_up_tower != null))
+	
+	print("=== TOWER MENU TOGGLE TEST COMPLETE ===")
 
 func create_tower_at_mouse_position(tower_name: String):
 	"""Create a tower at mouse position via hotkey"""
