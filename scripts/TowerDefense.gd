@@ -1847,14 +1847,17 @@ func pickup_metaprogression_tower(tower: Tower):
 	# Store the picked up tower
 	picked_up_tower = tower
 	
-	# Hide the original tower
-	tower.visible = false
+	# Position tower at mouse position immediately
+	tower.global_position = get_global_mouse_position()
 	
 	# Show range indicator at mouse position
 	show_tower_range_at_mouse_position(tower)
 	
 	# Create a visual indicator that we're holding a tower
 	create_pickup_indicator(tower)
+	
+	# Start following mouse position
+	start_tower_following_mouse()
 	
 	print("Metaprogression tower picked up: %s" % tower.tower_name)
 
@@ -1952,7 +1955,8 @@ func place_picked_up_tower(position: Vector2):
 	# Clear picked up tower
 	picked_up_tower = null
 	
-	# Remove pickup indicator and range indicator
+	# Stop mouse following and remove indicators
+	stop_tower_following_mouse()
 	remove_pickup_indicator()
 	clear_range_indicator()
 	
@@ -1971,7 +1975,8 @@ func return_picked_up_tower():
 	# Clear picked up tower
 	picked_up_tower = null
 	
-	# Remove pickup indicator and range indicator
+	# Stop mouse following and remove indicators
+	stop_tower_following_mouse()
 	remove_pickup_indicator()
 	clear_range_indicator()
 	
@@ -1987,6 +1992,34 @@ func remove_pickup_indicator():
 	"""Remove pickup indicator"""
 	print("Removing pickup indicator")
 	# Implementation depends on desired visual feedback
+
+# =============================================================================
+# TOWER MOUSE FOLLOWING SYSTEM
+# =============================================================================
+
+func start_tower_following_mouse():
+	"""Start making the picked up tower follow the mouse"""
+	if picked_up_tower == null:
+		return
+	
+	# Connect to the _process function to update position
+	set_process(true)
+	print("Started tower following mouse")
+
+func stop_tower_following_mouse():
+	"""Stop making the tower follow the mouse"""
+	set_process(false)
+	print("Stopped tower following mouse")
+
+func _process(delta):
+	"""Update picked up tower position to follow mouse"""
+	if picked_up_tower != null and is_instance_valid(picked_up_tower):
+		# Update tower position to mouse position
+		picked_up_tower.global_position = get_global_mouse_position()
+		
+		# Update range indicator position as well
+		if range_indicator != null and is_instance_valid(range_indicator):
+			range_indicator.global_position = get_global_mouse_position()
 
 func show_tower_range_at_mouse_position(tower: Tower):
 	"""Show range indicator at mouse position for picked up tower"""
