@@ -2130,9 +2130,18 @@ func handle_tower_hotkey(tower_type: String, tower_name: String):
 	print("Current is_in_tower_placement: %s" % is_in_tower_placement)
 	print("Current current_tower_type: %s" % current_tower_type)
 	
-	# SIMPLE SOLUTION: Always cancel first, then start fresh
+	# Check if we're already in placement mode for this tower type (toggle off)
+	if is_in_tower_placement and current_tower_type == tower_type:
+		print("Already in placement mode for %s, canceling placement" % tower_type)
+		tower_placer.cancel_placement()
+		# Wait for cancellation to complete
+		await get_tree().process_frame
+		await get_tree().process_frame
+		return
+	
+	# If in placement mode for different tower, cancel first
 	if is_in_tower_placement:
-		print("Already in placement mode, canceling first")
+		print("In placement mode for different tower, canceling first")
 		tower_placer.cancel_placement()
 		# Wait for cancellation to complete
 		await get_tree().process_frame
