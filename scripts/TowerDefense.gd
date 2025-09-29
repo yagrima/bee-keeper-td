@@ -1642,17 +1642,20 @@ func test_lightning_flower_range_indicator() -> bool:
 # =============================================================================
 
 func setup_metaprogression_fields():
-	"""Setup five empty 2x2 fields outside the play area for metaprogression"""
+	"""Setup five empty 2x2 fields in a horizontal line below the play area"""
 	print("Setting up metaprogression fields...")
 	
-	# Define five 2x2 field positions outside the play area
-	var field_positions = [
-		Vector2(-3, 1),   # Left of play area
-		Vector2(22, 1),   # Right of play area
-		Vector2(1, -3),   # Above play area
-		Vector2(1, 16),   # Below play area
-		Vector2(22, 16)   # Bottom-right corner
-	]
+	# Calculate positions for 5 fields in a horizontal line below the play area
+	# Play area is 20x15 (640x480 pixels), so below it starts at row 15
+	# Center the fields horizontally with equal spacing
+	var start_x = 2  # Start 2 tiles from left edge
+	var field_spacing = 3  # 3 tiles between field centers (1 tile gap between fields)
+	var row_y = 16  # One row below the play area
+	
+	var field_positions = []
+	for i in range(5):
+		var x_pos = start_x + (i * field_spacing)
+		field_positions.append(Vector2(x_pos, row_y))
 	
 	var map_offset = get_meta("map_offset", Vector2.ZERO)
 	
