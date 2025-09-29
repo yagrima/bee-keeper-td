@@ -143,7 +143,7 @@ func show_load_dialog():
 	
 	# Center the dialog
 	var window_size = Vector2(get_viewport().get_visible_rect().size)
-	load_dialog.position = (window_size - load_dialog.size) / 2
+	load_dialog.position = (window_size - Vector2(load_dialog.size)) / 2
 
 func _load_save_file(save_name: String, dialog: AcceptDialog):
 	"""Load specified save file from main menu"""
@@ -172,7 +172,7 @@ func show_load_error(message: String):
 	
 	# Center the dialog
 	var window_size = Vector2(get_viewport().get_visible_rect().size)
-	error_dialog.position = (window_size - error_dialog.size) / 2
+	error_dialog.position = (window_size - Vector2(error_dialog.size)) / 2
 
 # =============================================================================
 # TEST REMINDER SYSTEM FUNCTIONS

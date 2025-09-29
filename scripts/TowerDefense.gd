@@ -647,7 +647,7 @@ func show_insufficient_honey_dialog(required_honey: int, current_honey: int):
 	
 	# Center the dialog
 	var window_size = Vector2(get_viewport().get_visible_rect().size)
-	dialog.position = (window_size - dialog.size) / 2
+	dialog.position = (window_size - Vector2(dialog.size)) / 2
 	
 	# Auto-close after 3 seconds
 	var timer = get_tree().create_timer(3.0)
@@ -1395,7 +1395,7 @@ func show_save_dialog():
 	
 	# Center the dialog
 	var window_size = Vector2(get_viewport().get_visible_rect().size)
-	save_dialog.position = (window_size - save_dialog.size) / 2
+	save_dialog.position = (window_size - Vector2(save_dialog.size)) / 2
 	
 	# Focus the input field
 	input.grab_focus()
@@ -1458,7 +1458,7 @@ func show_load_dialog():
 	
 	# Center the dialog
 	var window_size = Vector2(get_viewport().get_visible_rect().size)
-	load_dialog.position = (window_size - load_dialog.size) / 2
+	load_dialog.position = (window_size - Vector2(load_dialog.size)) / 2
 
 func _save_with_name(save_name: String, dialog: AcceptDialog):
 	"""Save game with specified name"""
@@ -1497,7 +1497,7 @@ func show_save_notification(title: String, message: String):
 	
 	# Center the notification
 	var window_size = Vector2(get_viewport().get_visible_rect().size)
-	notification.position = (window_size - notification.size) / 2
+	notification.position = (window_size - Vector2(notification.size)) / 2
 	
 	# Auto-close after 2 seconds
 	var timer = get_tree().create_timer(2.0)

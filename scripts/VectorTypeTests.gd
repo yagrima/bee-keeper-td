@@ -27,6 +27,12 @@ func run_vector_type_tests():
 	# Test 5: Grid position calculations
 	test_results.append(test_grid_calculations())
 	
+	# Test 6: Dialog size operations (NEW)
+	test_results.append(test_dialog_size_operations())
+	
+	# Test 7: All size properties (NEW)
+	test_results.append(test_all_size_properties())
+	
 	# Print results
 	print_test_results(test_results)
 	
@@ -246,4 +252,67 @@ func test_vector_compatibility():
 		return true
 	except Exception as e:
 		print("❌ Vector compatibility test failed: %s" % str(e))
+		return false
+
+func test_dialog_size_operations() -> bool:
+	"""Test dialog size operations that might cause Vector2/Vector2i conflicts"""
+	print("Test 6: Dialog size operations...")
+	
+	try:
+		# Test save dialog centering
+		var window_size = Vector2(1920, 1080)
+		var save_dialog_size = Vector2(400, 200)
+		var save_position = (window_size - save_dialog_size) / 2
+		assert(save_position == Vector2(760, 440), "Save dialog centering failed")
+		
+		# Test load dialog centering
+		var load_dialog_size = Vector2(500, 400)
+		var load_position = (window_size - load_dialog_size) / 2
+		assert(load_position == Vector2(710, 340), "Load dialog centering failed")
+		
+		# Test error dialog centering
+		var error_dialog_size = Vector2(300, 100)
+		var error_position = (window_size - error_dialog_size) / 2
+		assert(error_position == Vector2(810, 490), "Error dialog centering failed")
+		
+		# Test notification centering
+		var notification_size = Vector2(300, 100)
+		var notification_position = (window_size - notification_size) / 2
+		assert(notification_position == Vector2(810, 490), "Notification centering failed")
+		
+		print("✅ Dialog size operations passed")
+		return true
+	except Exception as e:
+		print("❌ Dialog size operations failed: %s" % str(e))
+		return false
+
+func test_all_size_properties() -> bool:
+	"""Test all .size properties that might return Vector2i"""
+	print("Test 7: All size properties...")
+	
+	try:
+		var window_size = Vector2(1920, 1080)
+		
+		# Test various UI element sizes
+		var ui_elements = [
+			{"name": "Save Dialog", "size": Vector2(400, 200)},
+			{"name": "Load Dialog", "size": Vector2(500, 400)},
+			{"name": "Error Dialog", "size": Vector2(300, 100)},
+			{"name": "Notification", "size": Vector2(300, 100)},
+			{"name": "Victory Panel", "size": Vector2(400, 300)},
+			{"name": "Game Over Panel", "size": Vector2(400, 300)}
+		]
+		
+		for element in ui_elements:
+			var position = (window_size - element.size) / 2
+			var expected_x = (window_size.x - element.size.x) / 2
+			var expected_y = (window_size.y - element.size.y) / 2
+			
+			assert(position.x == expected_x, "%s X positioning failed" % element.name)
+			assert(position.y == expected_y, "%s Y positioning failed" % element.name)
+		
+		print("✅ All size properties passed")
+		return true
+	except Exception as e:
+		print("❌ All size properties failed: %s" % str(e))
 		return false
