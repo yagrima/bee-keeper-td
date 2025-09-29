@@ -114,7 +114,7 @@ func create_visual_map():
 	var ui_canvas = $UI
 
 	# Calculate center position for 640x480 map in 1920x1080 window
-	var window_size = get_viewport().get_visible_rect().size
+	var window_size = Vector2(get_viewport().get_visible_rect().size)
 	var map_size = Vector2(640, 480)  # 20*32 x 15*32
 	var center_offset = (window_size - map_size) / 2
 
@@ -640,7 +640,7 @@ func show_insufficient_honey_dialog(required_honey: int, current_honey: int):
 	ui_canvas.add_child(dialog)
 	
 	# Center the dialog
-	var window_size = get_viewport().get_visible_rect().size
+	var window_size = Vector2(get_viewport().get_visible_rect().size)
 	dialog.position = (window_size - dialog.size) / 2
 	
 	# Auto-close after 3 seconds
@@ -719,7 +719,7 @@ func show_victory_screen():
 	var victory_overlay = ColorRect.new()
 	victory_overlay.name = "VictoryOverlay"
 	victory_overlay.color = Color(0, 0, 0, 0.7)  # Semi-transparent black
-	victory_overlay.size = get_viewport().get_visible_rect().size
+	victory_overlay.size = Vector2(get_viewport().get_visible_rect().size)
 	victory_overlay.position = Vector2.ZERO
 	victory_overlay.z_index = 100  # Ensure it's on top
 
@@ -727,7 +727,7 @@ func show_victory_screen():
 	var victory_panel = Panel.new()
 	victory_panel.name = "VictoryPanel"
 	var panel_size = Vector2(400, 300)
-	var window_size = get_viewport().get_visible_rect().size
+	var window_size = Vector2(get_viewport().get_visible_rect().size)
 	victory_panel.size = panel_size
 	victory_panel.position = (window_size - panel_size) / 2  # Center the panel
 
@@ -846,7 +846,7 @@ func show_game_over_screen():
 	var game_over_overlay = ColorRect.new()
 	game_over_overlay.name = "GameOverOverlay"
 	game_over_overlay.color = Color(0, 0, 0, 0.8)  # Semi-transparent black
-	game_over_overlay.size = get_viewport().get_visible_rect().size
+	game_over_overlay.size = Vector2(get_viewport().get_visible_rect().size)
 	game_over_overlay.position = Vector2.ZERO
 	game_over_overlay.z_index = 100  # Ensure it's on top
 
@@ -854,7 +854,7 @@ func show_game_over_screen():
 	var game_over_panel = Panel.new()
 	game_over_panel.name = "GameOverPanel"
 	var panel_size = Vector2(400, 300)
-	var window_size = get_viewport().get_visible_rect().size
+	var window_size = Vector2(get_viewport().get_visible_rect().size)
 	game_over_panel.size = panel_size
 	game_over_panel.position = (window_size - panel_size) / 2  # Center the panel
 
@@ -1363,7 +1363,7 @@ func show_save_dialog():
 	ui_canvas.add_child(save_dialog)
 	
 	# Center the dialog
-	var window_size = get_viewport().get_visible_rect().size
+	var window_size = Vector2(get_viewport().get_visible_rect().size)
 	save_dialog.position = (window_size - save_dialog.size) / 2
 	
 	# Focus the input field
@@ -1426,7 +1426,7 @@ func show_load_dialog():
 	ui_canvas.add_child(load_dialog)
 	
 	# Center the dialog
-	var window_size = get_viewport().get_visible_rect().size
+	var window_size = Vector2(get_viewport().get_visible_rect().size)
 	load_dialog.position = (window_size - load_dialog.size) / 2
 
 func _save_with_name(save_name: String, dialog: AcceptDialog):
@@ -1465,7 +1465,7 @@ func show_save_notification(title: String, message: String):
 	ui_canvas.add_child(notification)
 	
 	# Center the notification
-	var window_size = get_viewport().get_visible_rect().size
+	var window_size = Vector2(get_viewport().get_visible_rect().size)
 	notification.position = (window_size - notification.size) / 2
 	
 	# Auto-close after 2 seconds

@@ -142,7 +142,7 @@ func show_load_dialog():
 	ui_canvas.add_child(load_dialog)
 	
 	# Center the dialog
-	var window_size = get_viewport().get_visible_rect().size
+	var window_size = Vector2(get_viewport().get_visible_rect().size)
 	load_dialog.position = (window_size - load_dialog.size) / 2
 
 func _load_save_file(save_name: String, dialog: AcceptDialog):
@@ -171,7 +171,7 @@ func show_load_error(message: String):
 	ui_canvas.add_child(error_dialog)
 	
 	# Center the dialog
-	var window_size = get_viewport().get_visible_rect().size
+	var window_size = Vector2(get_viewport().get_visible_rect().size)
 	error_dialog.position = (window_size - error_dialog.size) / 2
 
 # =============================================================================

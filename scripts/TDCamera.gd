@@ -13,7 +13,7 @@ func _ready():
 	zoom = Vector2(1.0, 1.0)
 
 	# Center camera on middle of window (where the centered map is)
-	var window_size = get_viewport().get_visible_rect().size
+	var window_size = Vector2(get_viewport().get_visible_rect().size)
 	position = window_size / 2
 
 	# Enable camera
