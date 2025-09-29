@@ -422,22 +422,19 @@ func _input(event):
 	
 	# Use dynamic hotkey system
 	if HotkeyManager.is_hotkey_pressed(event, "place_stinger"):
-		_on_place_tower_pressed("stinger")
+		create_tower_at_mouse_position("Stinger Tower")
 	elif HotkeyManager.is_hotkey_pressed(event, "place_propolis_bomber"):
-		_on_place_tower_pressed("propolis_bomber")
+		create_tower_at_mouse_position("Propolis Bomber Tower")
 	elif HotkeyManager.is_hotkey_pressed(event, "place_nectar_sprayer"):
-		_on_place_tower_pressed("nectar_sprayer")
+		create_tower_at_mouse_position("Nectar Sprayer Tower")
 	elif HotkeyManager.is_hotkey_pressed(event, "place_lightning_flower"):
-		_on_place_tower_pressed("lightning_flower")
+		create_tower_at_mouse_position("Lightning Flower Tower")
 	elif HotkeyManager.is_hotkey_pressed(event, "place_tower"):
 		# Toggle tower placement mode with current tower
 		if is_in_tower_placement:
 			tower_placer.cancel_placement()
 		else:
 			tower_placer.start_tower_placement(current_tower_type)
-	elif HotkeyManager.is_hotkey_pressed(event, "pickup_metaprogression_tower"):
-		# Try to pickup a metaprogression tower at mouse position
-		handle_metaprogression_tower_pickup_via_hotkey()
 	elif HotkeyManager.is_hotkey_pressed(event, "start_wave"):
 		# Start wave
 		_on_start_wave_pressed()
@@ -2055,44 +2052,6 @@ func create_tower_at_position(tower_name: String, position: Vector2) -> Tower:
 	
 	return tower
 
-func handle_metaprogression_tower_pickup_via_hotkey():
-	"""Handle metaprogression tower pickup via hotkey"""
-	print("=== HOTKEY METAPROGRESSION TOWER PICKUP ===")
-	
-	# Check if we're already holding a tower
-	if picked_up_tower != null:
-		print("Already holding a tower, trying to place it")
-		# Try to place the picked up tower at mouse position
-		var mouse_pos = get_global_mouse_position()
-		if try_place_picked_up_tower(mouse_pos):
-			print("Tower placed successfully via hotkey")
-		else:
-			print("Failed to place tower, returning to original position")
-			return_picked_up_tower()
-		return
-	
-	# Find the closest metaprogression tower to mouse position
-	var mouse_pos = get_global_mouse_position()
-	var closest_tower = null
-	var closest_distance = 1000.0  # Maximum pickup distance
-	
-	print("Looking for metaprogression towers near mouse position: %s" % mouse_pos)
-	
-	for tower in metaprogression_towers:
-		if tower and is_instance_valid(tower):
-			var distance = mouse_pos.distance_to(tower.global_position)
-			print("Tower %s at distance: %f" % [tower.tower_name, distance])
-			if distance < closest_distance and distance < 100.0:  # Within pickup range
-				closest_tower = tower
-				closest_distance = distance
-	
-	if closest_tower:
-		print("Found closest tower: %s at distance: %f" % [closest_tower.tower_name, closest_distance])
-		pickup_metaprogression_tower(closest_tower)
-	else:
-		print("No metaprogression towers found within pickup range")
-		# If no tower found, try to create a random tower at mouse position
-		create_random_tower_at_mouse_position()
 
 func create_random_tower_at_mouse_position():
 	"""Create a random tower at mouse position when no metaprogression tower is nearby"""
@@ -2120,6 +2079,41 @@ func create_random_tower_at_mouse_position():
 		print("Random tower created and picked up: %s" % random_tower_name)
 	else:
 		print("Failed to create random tower")
+
+func create_tower_at_mouse_position(tower_name: String):
+	"""Create a tower at mouse position via hotkey"""
+	print("=== CREATING TOWER AT MOUSE POSITION VIA HOTKEY ===")
+	print("Tower name: %s" % tower_name)
+	
+	# Check if we're already holding a tower
+	if picked_up_tower != null:
+		print("Already holding a tower, trying to place it")
+		# Try to place the picked up tower at mouse position
+		var mouse_pos = get_global_mouse_position()
+		if try_place_picked_up_tower(mouse_pos):
+			print("Tower placed successfully via hotkey")
+		else:
+			print("Failed to place tower, returning to original position")
+			return_picked_up_tower()
+		return
+	
+	var mouse_pos = get_global_mouse_position()
+	print("Creating tower: %s at mouse position: %s" % [tower_name, mouse_pos])
+	
+	# Create tower at mouse position
+	var new_tower = create_tower_at_position(tower_name, mouse_pos)
+	if new_tower:
+		picked_up_tower = new_tower
+		
+		# Show range indicator
+		show_tower_range_at_mouse_position(new_tower)
+		
+		# Start following mouse
+		start_tower_following_mouse()
+		
+		print("Tower created and picked up: %s" % tower_name)
+	else:
+		print("Failed to create tower")
 
 # =============================================================================
 # TOWER MOUSE FOLLOWING SYSTEM
