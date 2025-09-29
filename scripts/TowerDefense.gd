@@ -404,12 +404,23 @@ func setup_tower_placer():
 func _input(event):
 	# Handle mouse clicks for tower selection first
 	if event is InputEventMouseButton and event.pressed:
-		print("Mouse button pressed: ", event.button_index, " at position: ", event.position)
+		print("\n" + "=".repeat(80))
+		print("🖱️ MOUSE INPUT EVENT")
+		print("Button: %d, Position: %s" % [event.button_index, event.position])
+		print("picked_up_tower: %s" % ("YES - " + picked_up_tower.tower_name if picked_up_tower else "NO"))
+		print("is_in_tower_placement: %s" % is_in_tower_placement)
+		print("=".repeat(80))
+		
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			# Check for metaprogression tower pickup first
-			if handle_metaprogression_tower_pickup(event.position):
+			print("→ Calling handle_metaprogression_tower_pickup...")
+			var handled = handle_metaprogression_tower_pickup(event.position)
+			print("→ handle_metaprogression_tower_pickup returned: %s" % handled)
+			if handled:
+				print("✅ Event handled by metaprogression system\n")
 				return
 			# Then handle regular tower selection
+			print("→ Calling handle_tower_click...")
 			handle_tower_click(event.position)
 		elif event.button_index == MOUSE_BUTTON_RIGHT:
 			# Right click - clear selection
@@ -1846,23 +1857,37 @@ func create_metaprogression_tower(tower_type: String, world_pos: Vector2, field_
 
 func handle_metaprogression_tower_pickup(click_position: Vector2) -> bool:
 	"""Handle pickup of metaprogression towers"""
-	print("Checking for metaprogression tower pickup at: %s" % click_position)
+	print("\n┌─ handle_metaprogression_tower_pickup ─────────────────────────")
+	print("│ Click position: %s" % click_position)
+	print("│ picked_up_tower: %s" % (picked_up_tower.tower_name if picked_up_tower else "null"))
+	print("│ metaprogression_towers count: %d" % metaprogression_towers.size())
 	
 	# Check if we're already holding a tower
 	if picked_up_tower != null:
-		# Try to place the picked up tower
-		if try_place_picked_up_tower(click_position):
-			return true
-		return false
+		print("│ ➤ Already holding a tower, trying to place it...")
+		var result = try_place_picked_up_tower(click_position)
+		print("│ ➤ Placement result: %s" % result)
+		print("└────────────────────────────────────────────────────────────────")
+		return result
 	
 	# Check for metaprogression towers at click position
+	print("│ Checking %d metaprogression towers:" % metaprogression_towers.size())
+	var tower_index = 0
 	for tower in metaprogression_towers:
 		if tower and is_instance_valid(tower):
 			var distance = click_position.distance_to(tower.global_position)
+			print("│   [%d] %s at %s, distance: %.2f" % [tower_index, tower.tower_name, tower.global_position, distance])
 			if distance < 32:  # Within tower radius
+				print("│ ✅ Tower clicked! Picking up...")
 				pickup_metaprogression_tower(tower)
+				print("└────────────────────────────────────────────────────────────────")
 				return true
+		else:
+			print("│   [%d] INVALID TOWER" % tower_index)
+		tower_index += 1
 	
+	print("│ ❌ No tower found at click position")
+	print("└────────────────────────────────────────────────────────────────")
 	return false
 
 func pickup_metaprogression_tower(tower: Tower):
@@ -1898,51 +1923,76 @@ func pickup_metaprogression_tower(tower: Tower):
 
 func try_place_picked_up_tower(click_position: Vector2) -> bool:
 	"""Try to place the picked up tower at the click position"""
+	print("\n┌─ try_place_picked_up_tower ────────────────────────────────────")
+	
 	if picked_up_tower == null:
+		print("│ ❌ ERROR: No tower to place!")
+		print("└────────────────────────────────────────────────────────────────")
 		return false
 	
-	print("=== TRYING TO PLACE PICKED UP TOWER ===")
-	print("Click position (UI): %s" % click_position)
+	print("│ Tower to place: %s" % picked_up_tower.tower_name)
+	print("│ Click position (UI): %s" % click_position)
 	
 	# Get map offset for coordinate conversion
 	var map_offset = get_meta("map_offset", Vector2.ZERO)
+	print("│ Map offset: %s" % map_offset)
 	
 	# Convert click position (UI coordinates) to map coordinates
 	var map_position = click_position - map_offset
-	print("Map position: %s" % map_position)
+	print("│ Map position: %s" % map_position)
+	
+	# Calculate grid position for reference
+	var grid_pos = Vector2(int(map_position.x / 32), int(map_position.y / 32))
+	print("│ Grid position: %s" % grid_pos)
 	
 	# Check if position is valid for tower placement (using map coordinates)
-	if is_valid_tower_placement_position(map_position):
-		print("✅ Position is valid, placing tower")
-		# Place the tower
+	print("│ ➤ Calling is_valid_tower_placement_position...")
+	var is_valid = is_valid_tower_placement_position(map_position)
+	print("│ ➤ Validation result: %s" % is_valid)
+	
+	if is_valid:
+		print("│ ✅ Position is valid, placing tower")
 		place_picked_up_tower(click_position)
+		print("└────────────────────────────────────────────────────────────────")
 		return true
 	else:
-		print("❌ Position is invalid, returning tower")
-		# Return tower to original position
+		print("│ ❌ Position is invalid, returning tower")
 		return_picked_up_tower()
+		print("└────────────────────────────────────────────────────────────────")
 		return false
 
 func is_valid_tower_placement_position(position: Vector2) -> bool:
-	"""Check if position is valid for tower placement"""
+	"""Check if position is valid for tower placement (position in map coordinates)"""
+	print("\n  ┌─ is_valid_tower_placement_position ─────────────────────────")
+	print("  │ Position (map): %s" % position)
+	
 	# Check if position is within the play area (20x15 grid)
 	var grid_pos = Vector2(int(position.x / 32), int(position.y / 32))
+	print("  │ Grid position: %s" % grid_pos)
 	
 	# Play area is 20x15 (0-19 x 0-14)
 	if grid_pos.x < 0 or grid_pos.x >= 20 or grid_pos.y < 0 or grid_pos.y >= 15:
-		print("Position outside play area: %s" % grid_pos)
+		print("  │ ❌ Position outside play area!")
+		print("  └──────────────────────────────────────────────────────────────")
 		return false
+	print("  │ ✓ Position within play area")
 	
 	# Check if position is not on the path
 	if is_position_on_path(position):
-		print("Position on path: %s" % position)
+		print("  │ ❌ Position on path!")
+		print("  └──────────────────────────────────────────────────────────────")
 		return false
+	print("  │ ✓ Position not on path")
 	
 	# Check if position is not occupied by another tower
 	if is_position_occupied(position):
-		print("Position occupied: %s" % position)
+		print("  │ ❌ Position occupied!")
+		print("  └──────────────────────────────────────────────────────────────")
 		return false
+	print("  │ ✓ Position not occupied")
 	
+	print("  │ ✅ All checks passed - position is valid!")
+	print("  └──────────────────────────────────────────────────────────────")
 	return true
 
 func is_position_on_path(position: Vector2) -> bool:
