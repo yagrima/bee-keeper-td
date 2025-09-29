@@ -1805,14 +1805,24 @@ func create_metaprogression_tower(tower_type: String, world_pos: Vector2, field_
 	tower.position = world_pos
 	tower.tower_name = tower_name
 	
+	print("=== CREATING METAPROGRESSION TOWER ===")
+	print("Tower name: %s" % tower_name)
+	print("World position: %s" % world_pos)
+	print("Tower position after setting: %s" % tower.position)
+	print("Tower global position: %s" % tower.global_position)
+	
 	# Add to scene
 	add_child(tower)
+	
+	print("Tower position after add_child: %s" % tower.position)
+	print("Tower global position after add_child: %s" % tower.global_position)
 	
 	# Make tower clickable for pickup
 	tower.set_meta("is_metaprogression_tower", true)
 	tower.set_meta("field_number", field_number)
 	
 	print("Metaprogression tower created: %s in field %d" % [tower_name, field_number])
+	print("=== TOWER CREATION COMPLETE ===")
 	return tower
 
 # =============================================================================
@@ -1842,13 +1852,18 @@ func handle_metaprogression_tower_pickup(click_position: Vector2) -> bool:
 
 func pickup_metaprogression_tower(tower: Tower):
 	"""Pick up a metaprogression tower"""
-	print("Picking up metaprogression tower: %s" % tower.tower_name)
+	print("=== PICKING UP METAPROGRESSION TOWER ===")
+	print("Tower name: %s" % tower.tower_name)
+	print("Tower original position: %s" % tower.global_position)
+	print("Mouse position: %s" % get_global_mouse_position())
 	
 	# Store the picked up tower
 	picked_up_tower = tower
 	
 	# Position tower at mouse position immediately
-	tower.global_position = get_global_mouse_position()
+	var mouse_pos = get_global_mouse_position()
+	tower.global_position = mouse_pos
+	print("Tower positioned at: %s" % tower.global_position)
 	
 	# Show range indicator at mouse position
 	show_tower_range_at_mouse_position(tower)
@@ -1860,6 +1875,7 @@ func pickup_metaprogression_tower(tower: Tower):
 	start_tower_following_mouse()
 	
 	print("Metaprogression tower picked up: %s" % tower.tower_name)
+	print("=== PICKUP COMPLETE ===")
 
 func try_place_picked_up_tower(click_position: Vector2) -> bool:
 	"""Try to place the picked up tower at the click position"""
@@ -2014,12 +2030,19 @@ func stop_tower_following_mouse():
 func _process(delta):
 	"""Update picked up tower position to follow mouse"""
 	if picked_up_tower != null and is_instance_valid(picked_up_tower):
+		var mouse_pos = get_global_mouse_position()
+		var old_pos = picked_up_tower.global_position
+		
 		# Update tower position to mouse position
-		picked_up_tower.global_position = get_global_mouse_position()
+		picked_up_tower.global_position = mouse_pos
+		
+		# Debug: Print position changes
+		if old_pos != mouse_pos:
+			print("Tower moved from %s to %s" % [old_pos, mouse_pos])
 		
 		# Update range indicator position as well
 		if range_indicator != null and is_instance_valid(range_indicator):
-			range_indicator.global_position = get_global_mouse_position()
+			range_indicator.global_position = mouse_pos
 
 func show_tower_range_at_mouse_position(tower: Tower):
 	"""Show range indicator at mouse position for picked up tower"""
