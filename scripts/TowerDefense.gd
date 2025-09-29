@@ -1748,8 +1748,8 @@ func assign_random_towers_to_fields():
 	"""Assign random towers to each metaprogression field"""
 	print("Assigning random towers to metaprogression fields...")
 	
-	# Define the four basic tower types
-	var tower_types = ["stinger", "propolis_bomber", "nectar_sprayer", "lightning_flower"]
+	# Define the four basic tower types (using existing towers for now)
+	var tower_types = ["basic_shooter", "piercing_shooter", "basic_shooter", "piercing_shooter"]
 	
 	# Clear existing towers
 	metaprogression_towers.clear()
@@ -1781,29 +1781,21 @@ func create_metaprogression_tower(tower_type: String, world_pos: Vector2, field_
 	"""Create a tower in a metaprogression field"""
 	print("Creating %s tower in field %d at %s" % [tower_type, field_number, world_pos])
 	
-	var tower_scene: PackedScene
+	var tower: Tower
 	var tower_name: String
 	
-	# Load the appropriate tower scene
+	# Create the appropriate tower instance directly
 	match tower_type:
-		"stinger":
-			tower_scene = preload("res://scripts/StingerTower.gd")
-			tower_name = "Stinger Tower"
-		"propolis_bomber":
-			tower_scene = preload("res://scripts/PropolisBomberTower.gd")
-			tower_name = "Propolis Bomber Tower"
-		"nectar_sprayer":
-			tower_scene = preload("res://scripts/NectarSprayerTower.gd")
-			tower_name = "Nectar Sprayer Tower"
-		"lightning_flower":
-			tower_scene = preload("res://scripts/LightningFlowerTower.gd")
-			tower_name = "Lightning Flower Tower"
+		"basic_shooter":
+			tower = BasicShooterTower.new()
+			tower_name = "Basic Shooter Tower"
+		"piercing_shooter":
+			tower = PiercingTower.new()
+			tower_name = "Piercing Shooter Tower"
 		_:
 			print("Unknown tower type: %s" % tower_type)
 			return null
 	
-	# Create tower instance
-	var tower = tower_scene.instantiate()
 	if not tower:
 		print("Failed to create tower instance for type: %s" % tower_type)
 		return null
