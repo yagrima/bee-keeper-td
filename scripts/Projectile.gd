@@ -22,6 +22,15 @@ enum ProjectileType {
 # Homing properties
 @export var is_homing: bool = false  # Default: no homing, can be enabled per tower
 @export var turn_rate: float = 8.0  # Turn rate for homing projectiles
+@export var homing_strength: float = 0.5  # How strong the homing effect is
+@export var max_lifetime: float = 3.0  # Maximum time before expiring
+
+# New tower-specific properties
+@export var explosion_radius: float = 0.0  # For Propolis Bomber
+@export var has_explosion: bool = false
+@export var chain_count: int = 0  # For Lightning Flower
+@export var chain_range: float = 0.0
+@export var has_chain_lightning: bool = false
 
 # Visual
 @export var trail_enabled: bool = false
@@ -36,6 +45,8 @@ var hits_remaining: int
 var has_hit_targets: Array[Node2D] = []
 var homing_timeout: float = 0.0
 var max_homing_time: float = 3.0  # Stop homing after 3 seconds
+var lifetime: float = 0.0
+var chained_targets: Array[Node2D] = []
 
 # Components
 var visual: Node2D
@@ -101,10 +112,12 @@ func initialize_with_target(start_pos: Vector2, target_node: Node2D, projectile_
 		is_homing = true
 
 func _process(delta):
+	lifetime += delta
+
 	update_movement(delta)
 	update_visual()
 	check_range_and_lifetime()
-	
+
 	# Enhanced collision detection for high speeds
 	if Engine.time_scale > 1.0:
 		# Check collisions multiple times per frame for high speeds
@@ -171,7 +184,7 @@ func update_visual():
 		visual.rotation = velocity.angle()
 
 func check_range_and_lifetime():
-	if traveled_distance >= max_range:
+	if traveled_distance >= max_range or lifetime >= max_lifetime:
 		expire()
 
 func check_manual_collisions():
@@ -220,19 +233,46 @@ func handle_collision(body):
 
 	if body in has_hit_targets:
 		return  # Already hit this target
+
 	# Deal damage
 	body.take_damage(damage)
 	has_hit_targets.append(body)
 	projectile_hit.emit(body, damage)
 
-	# Handle splash damage
-	if splash_radius > 0:
+	# Handle special effects
+	if has_explosion and explosion_radius > 0:
+		deal_explosion_damage()
+	elif splash_radius > 0:
 		deal_splash_damage()
+
+	if has_chain_lightning and chain_count > 0:
+		deal_chain_lightning(body)
 
 	# Reduce penetration
 	hits_remaining -= 1
 	if hits_remaining <= 0:
 		destroy()
+
+func deal_explosion_damage():
+	var space_state = get_world_2d().direct_space_state
+	var query = PhysicsShapeQueryParameters2D.new()
+	var circle = CircleShape2D.new()
+	circle.radius = explosion_radius
+	query.shape = circle
+	query.transform = Transform2D(0, global_position)
+	query.collision_mask = 2  # Enemy layer
+	query.collide_with_areas = true
+
+	var results = space_state.intersect_shape(query)
+
+	for result in results:
+		var body = result["collider"]
+		if body.has_method("take_damage") and body not in has_hit_targets:
+			# Full damage for explosion
+			body.take_damage(damage)
+			has_hit_targets.append(body)
+			projectile_hit.emit(body, damage)
+			print("Explosion hit: ", body.name, " for ", damage, " damage")
 
 func deal_splash_damage():
 	var space_state = get_world_2d().direct_space_state
@@ -241,15 +281,49 @@ func deal_splash_damage():
 	circle.radius = splash_radius
 	query.shape = circle
 	query.transform = Transform2D(0, global_position)
+	query.collision_mask = 2  # Enemy layer
+	query.collide_with_areas = true
 
 	var results = space_state.intersect_shape(query)
 
 	for result in results:
 		var body = result["collider"]
 		if body.has_method("take_damage") and body not in has_hit_targets:
-			var splash_damage = damage * 0.5  # 50% splash damage
-			body.take_damage(splash_damage)
-			projectile_hit.emit(body, splash_damage)
+			var splash_damage_amount = damage * 0.5  # 50% splash damage
+			body.take_damage(splash_damage_amount)
+			has_hit_targets.append(body)
+			projectile_hit.emit(body, splash_damage_amount)
+
+func deal_chain_lightning(original_target: Node2D):
+	if chain_count <= 0:
+		return
+
+	var space_state = get_world_2d().direct_space_state
+	var query = PhysicsShapeQueryParameters2D.new()
+	var circle = CircleShape2D.new()
+	circle.radius = chain_range
+	query.shape = circle
+	query.transform = Transform2D(0, original_target.global_position)
+	query.collision_mask = 2  # Enemy layer
+	query.collide_with_areas = true
+
+	var results = space_state.intersect_shape(query)
+	var chains_made = 0
+
+	for result in results:
+		var body = result["collider"]
+		if body != original_target and body.has_method("take_damage") and body not in chained_targets and body not in has_hit_targets:
+			if chains_made >= chain_count:
+				break
+
+			# Chain lightning damage (reduced)
+			var chain_damage = damage * 0.7  # 70% damage for chain
+			body.take_damage(chain_damage)
+			chained_targets.append(body)
+			has_hit_targets.append(body)
+			projectile_hit.emit(body, chain_damage)
+			chains_made += 1
+			print("Chain lightning hit: ", body.name, " for ", chain_damage, " damage")
 
 func expire():
 	projectile_expired.emit()
@@ -257,6 +331,64 @@ func expire():
 
 func destroy():
 	queue_free()
+
+# Visual creation methods for different tower types
+func create_stinger_visual():
+	# Small, red, fast-looking projectile
+	if visual:
+		visual.queue_free()
+	visual = Node2D.new()
+	add_child(visual)
+
+	var rect = ColorRect.new()
+	rect.size = Vector2(6, 3)
+	rect.position = Vector2(-3, -1.5)
+	rect.color = Color(0.8, 0.2, 0.2)  # Red
+	visual.add_child(rect)
+
+func create_propolis_visual():
+	# Large, brown, explosive-looking projectile
+	if visual:
+		visual.queue_free()
+	visual = Node2D.new()
+	add_child(visual)
+
+	var rect = ColorRect.new()
+	rect.size = Vector2(12, 8)
+	rect.position = Vector2(-6, -4)
+	rect.color = Color(0.4, 0.2, 0.0)  # Dark brown
+	visual.add_child(rect)
+
+func create_nectar_visual():
+	# Golden, stream-like projectile
+	if visual:
+		visual.queue_free()
+	visual = Node2D.new()
+	add_child(visual)
+
+	var rect = ColorRect.new()
+	rect.size = Vector2(10, 4)
+	rect.position = Vector2(-5, -2)
+	rect.color = Color(0.9, 0.7, 0.0)  # Golden yellow
+	visual.add_child(rect)
+
+func create_lightning_visual():
+	# Bright blue, electric-looking projectile
+	if visual:
+		visual.queue_free()
+	visual = Node2D.new()
+	add_child(visual)
+
+	var rect = ColorRect.new()
+	rect.size = Vector2(8, 3)
+	rect.position = Vector2(-4, -1.5)
+	rect.color = Color(0.0, 0.8, 1.0)  # Electric blue
+	visual.add_child(rect)
+
+func set_target(new_target: Node2D):
+	target = new_target
+	if new_target:
+		is_homing = true
 
 func get_projectile_info() -> Dictionary:
 	return {
@@ -266,5 +398,9 @@ func get_projectile_info() -> Dictionary:
 		"range": max_range,
 		"penetration": penetration,
 		"splash_radius": splash_radius,
-		"is_homing": is_homing
+		"is_homing": is_homing,
+		"explosion_radius": explosion_radius,
+		"has_explosion": has_explosion,
+		"chain_count": chain_count,
+		"has_chain_lightning": has_chain_lightning
 	}

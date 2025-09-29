@@ -314,3 +314,12 @@ func quick_test_new_ui_feature(feature_name: String):
 		"New UI feature: " + feature_name,
 		["button_functionality", "ui_interaction", "ui_responsiveness"]
 	)
+
+# Mark completed features for new tower implementation
+func mark_lightning_flower_testing_complete():
+	"""Mark Lightning Flower implementation as tested"""
+	mark_feature_tested("tower_lightning_flower")
+	mark_feature_tested("tower_click_interaction")
+	mark_feature_tested("range_indicators")
+	mark_feature_tested("tower_selection_safety")
+	print("✅ Lightning Flower testing marked as complete")

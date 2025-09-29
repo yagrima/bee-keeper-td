@@ -8,14 +8,19 @@ signal hotkey_changed(action: String, old_key: int, new_key: int)
 # Default hotkey configuration
 var hotkeys: Dictionary = {
 	"place_tower": KEY_T,
-	"start_wave": KEY_R,
+	"start_wave": KEY_SPACE,
 	"cancel_action": KEY_ESCAPE,
-	"pause_game": KEY_SPACE,
+	"pause_game": KEY_P,
 	"save_game": KEY_F5,
 	"load_game": KEY_F9,
 	"quick_save": KEY_F6,
 	"quick_load": KEY_F7,
-	"speed_toggle": KEY_Q
+	"speed_toggle": KEY_F,
+	# Tower placement hotkeys
+	"place_stinger": KEY_Q,
+	"place_propolis_bomber": KEY_W,
+	"place_nectar_sprayer": KEY_E,
+	"place_lightning_flower": KEY_R
 }
 
 # Action names for display
@@ -28,7 +33,12 @@ var action_names: Dictionary = {
 	"load_game": "Load Game",
 	"quick_save": "Quick Save",
 	"quick_load": "Quick Load",
-	"speed_toggle": "Speed Toggle"
+	"speed_toggle": "Speed Toggle",
+	# Tower placement action names
+	"place_stinger": "Stinger Tower",
+	"place_propolis_bomber": "Propolis Bomber",
+	"place_nectar_sprayer": "Nectar Sprayer",
+	"place_lightning_flower": "Lightning Flower"
 }
 
 func _ready():
@@ -100,13 +110,19 @@ func reset_to_defaults():
 	"""Reset all hotkeys to default values"""
 	hotkeys = {
 		"place_tower": KEY_T,
-		"start_wave": KEY_R,
+		"start_wave": KEY_SPACE,
 		"cancel_action": KEY_ESCAPE,
-		"pause_game": KEY_SPACE,
+		"pause_game": KEY_P,
 		"save_game": KEY_F5,
 		"load_game": KEY_F9,
 		"quick_save": KEY_F6,
-		"quick_load": KEY_F7
+		"quick_load": KEY_F7,
+		"speed_toggle": KEY_F,
+		# Tower placement hotkeys
+		"place_stinger": KEY_Q,
+		"place_propolis_bomber": KEY_W,
+		"place_nectar_sprayer": KEY_E,
+		"place_lightning_flower": KEY_R
 	}
 
 	save_hotkeys_to_config()

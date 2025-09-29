@@ -29,6 +29,31 @@ var placed_towers: Array[Tower] = []
 
 # Available tower types
 var available_towers: Dictionary = {
+	"stinger": {
+		"name": "Stinger Tower",
+		"script": "res://scripts/StingerTower.gd",
+		"cost": 20,
+		"description": "Fast-firing tower with high attack speed"
+	},
+	"propolis_bomber": {
+		"name": "Propolis Bomber",
+		"script": "res://scripts/PropolisBomberTower.gd",
+		"cost": 45,
+		"description": "Explosive projectiles with area damage"
+	},
+	"nectar_sprayer": {
+		"name": "Nectar Sprayer",
+		"script": "res://scripts/NectarSprayerTower.gd",
+		"cost": 30,
+		"description": "Penetrating shots that hit multiple enemies in a line"
+	},
+	"lightning_flower": {
+		"name": "Lightning Flower",
+		"script": "res://scripts/LightningFlowerTower.gd",
+		"cost": 35,
+		"description": "Chain lightning that jumps between nearby enemies"
+	},
+	# Legacy support
 	"basic_shooter": {
 		"name": "Basic Shooter",
 		"script": "res://scripts/BasicShooterTower.gd",
@@ -131,7 +156,7 @@ func create_range_preview():
 
 	# Get tower data for range
 	var tower_data = available_towers[selected_tower_type]
-	var preview_range = 120.0  # Default range for preview
+	var preview_range = get_tower_range_preview(selected_tower_type)
 
 	# Create range circle
 	var range_circle = Node2D.new()
@@ -280,6 +305,25 @@ func place_tower(pos: Vector2):
 
 	# Continue placement or exit based on user preference
 	# For now, continue placing the same tower type
+
+func get_tower_range_preview(tower_type: String) -> float:
+	"""Get the range for preview based on tower type"""
+	match tower_type:
+		"stinger":
+			return 80.0
+		"propolis_bomber":
+			return 100.0
+		"nectar_sprayer":
+			return 120.0
+		"lightning_flower":
+			return 90.0
+		# Legacy support
+		"basic_shooter":
+			return 100.0
+		"piercing_shooter":
+			return 120.0
+		_:
+			return 100.0  # Default range
 
 func cancel_placement():
 	current_mode = PlacementMode.NONE

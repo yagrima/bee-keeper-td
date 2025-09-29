@@ -11,7 +11,6 @@ extends Node2D
 @onready var wave_composition_label: Label
 @onready var start_wave_button = $UI/GameUI/Controls/StartWaveButton
 @onready var place_tower_button = $UI/GameUI/Controls/PlaceTowerButton
-@onready var tower_type_cycle_button: Button
 @onready var back_button = $UI/GameUI/Controls/BackButton
 @onready var speed_button: Button
 
@@ -22,8 +21,14 @@ var speed_mode: int = 0  # 0 = normal, 1 = 2x, 2 = 3x
 
 # Tower placement
 var tower_placer: TowerPlacer
-var current_tower_type: String = "basic_shooter"
-var available_tower_types: Array[String] = ["basic_shooter", "piercing_shooter"]
+var current_tower_type: String = "stinger"
+var available_tower_types: Array[String] = ["stinger", "propolis_bomber", "nectar_sprayer", "lightning_flower"]
+
+# Individual tower buttons
+var stinger_button: Button
+var propolis_bomber_button: Button
+var nectar_sprayer_button: Button
+var lightning_flower_button: Button
 
 # Wave management
 var wave_manager: WaveManager
@@ -71,12 +76,15 @@ func _ready():
 	setup_wave_manager()
 	setup_cursor_timer()
 	setup_wave_composition_ui()
-	setup_tower_type_ui()
+	setup_individual_tower_buttons()
 	setup_speed_button()
+	setup_metaprogression_fields()
 	update_ui()
-	
+
 	# Check for pending save data to load
 	check_for_pending_save_data()
+
+	# Integration tests available via run_lightning_flower_integration_test() if needed
 
 
 func setup_basic_map():
@@ -317,40 +325,27 @@ func _on_start_wave_pressed():
 	if start_wave_button:
 		start_wave_button.disabled = true
 
-func _on_place_tower_pressed():
+func _on_place_tower_pressed(tower_type: String = ""):
+	# Use the provided tower type, or fall back to current_tower_type
+	var selected_type = tower_type if tower_type != "" else current_tower_type
+
 	# Clear tower selection when starting tower placement
 	clear_tower_selection()
-	
+
 	# Check if player has enough honey for the tower
-	var tower_cost = get_tower_cost(current_tower_type)
+	var tower_cost = get_tower_cost(selected_type)
 	var current_honey = GameManager.get_resource("honey")
-	
+
 	if current_honey < tower_cost:
 		show_insufficient_honey_dialog(tower_cost, current_honey)
 		return
-	
+
+	# Set current tower type and start placement
+	current_tower_type = selected_type
+	update_button_selection()
 	tower_placer.start_tower_placement(current_tower_type)
 
-func _on_tower_type_cycle_pressed():
-	# Cycle to next tower type
-	var current_index = available_tower_types.find(current_tower_type)
-	current_index = (current_index + 1) % available_tower_types.size()
-	current_tower_type = available_tower_types[current_index]
-
-	# Update button text
-	update_tower_type_button_text()
-
-	print("Switched to tower type: ", current_tower_type)
-
-func update_tower_type_button_text():
-	if tower_type_cycle_button:
-		match current_tower_type:
-			"basic_shooter":
-				tower_type_cycle_button.text = "Type: Basic Shooter (25 honey)"
-			"piercing_shooter":
-				tower_type_cycle_button.text = "Type: Piercing Shooter (35 honey)"
-			_:
-				tower_type_cycle_button.text = "Type: " + current_tower_type
+# Removed old tower type cycle functions - now using individual buttons
 
 func _on_back_pressed():
 	SceneManager.goto_main_menu()
@@ -409,8 +404,16 @@ func _input(event):
 		return
 	
 	# Use dynamic hotkey system
-	if HotkeyManager.is_hotkey_pressed(event, "place_tower"):
-		# Toggle tower placement mode
+	if HotkeyManager.is_hotkey_pressed(event, "place_stinger"):
+		_on_place_tower_pressed("stinger")
+	elif HotkeyManager.is_hotkey_pressed(event, "place_propolis_bomber"):
+		_on_place_tower_pressed("propolis_bomber")
+	elif HotkeyManager.is_hotkey_pressed(event, "place_nectar_sprayer"):
+		_on_place_tower_pressed("nectar_sprayer")
+	elif HotkeyManager.is_hotkey_pressed(event, "place_lightning_flower"):
+		_on_place_tower_pressed("lightning_flower")
+	elif HotkeyManager.is_hotkey_pressed(event, "place_tower"):
+		# Toggle tower placement mode with current tower
 		if is_in_tower_placement:
 			tower_placer.cancel_placement()
 		else:
@@ -606,6 +609,15 @@ func clear_range_indicator():
 func get_tower_cost(tower_type: String) -> int:
 	"""Get the cost of a tower type"""
 	match tower_type:
+		"stinger":
+			return 20
+		"propolis_bomber":
+			return 45
+		"nectar_sprayer":
+			return 30
+		"lightning_flower":
+			return 35
+		# Legacy support
 		"basic_shooter":
 			return 25
 		"piercing_shooter":
@@ -961,44 +973,100 @@ func setup_wave_composition_ui():
 	var ui_canvas = $UI
 	ui_canvas.add_child(wave_composition_label)
 
-func setup_tower_type_ui():
-	# Create tower type cycle button next to place tower button
-	tower_type_cycle_button = Button.new()
-	tower_type_cycle_button.name = "TowerTypeCycleButton"
-	tower_type_cycle_button.text = "Type: Basic Shooter"
-	tower_type_cycle_button.size = Vector2(200, 40)
+func setup_individual_tower_buttons():
+	# Create four individual tower buttons
+	var button_parent = place_tower_button.get_parent()
+	var base_position = place_tower_button.position
+	var button_size = Vector2(130, 40)
+	var button_spacing = 140
 
-	# Position it next to the place tower button
-	var place_button_pos = place_tower_button.position
-	tower_type_cycle_button.position = Vector2(place_button_pos.x + 250, place_button_pos.y)
+	# Stinger Tower Button
+	stinger_button = Button.new()
+	stinger_button.name = "StingerButton"
+	stinger_button.text = "Q: Stinger (20)"
+	stinger_button.size = button_size
+	stinger_button.position = Vector2(base_position.x + button_spacing * 0, base_position.y)
+	stinger_button.pressed.connect(func(): _on_place_tower_pressed("stinger"))
+	button_parent.add_child(stinger_button)
 
-	# Connect signal
-	if tower_type_cycle_button:
-		tower_type_cycle_button.pressed.connect(_on_tower_type_cycle_pressed)
+	# Propolis Bomber Button
+	propolis_bomber_button = Button.new()
+	propolis_bomber_button.name = "PropolisBomberButton"
+	propolis_bomber_button.text = "W: Propolis (45)"
+	propolis_bomber_button.size = button_size
+	propolis_bomber_button.position = Vector2(base_position.x + button_spacing * 1, base_position.y)
+	propolis_bomber_button.pressed.connect(func(): _on_place_tower_pressed("propolis_bomber"))
+	button_parent.add_child(propolis_bomber_button)
 
-	# Add to same parent as place tower button
-	place_tower_button.get_parent().add_child(tower_type_cycle_button)
+	# Nectar Sprayer Button
+	nectar_sprayer_button = Button.new()
+	nectar_sprayer_button.name = "NectarSprayerButton"
+	nectar_sprayer_button.text = "E: Nectar (30)"
+	nectar_sprayer_button.size = button_size
+	nectar_sprayer_button.position = Vector2(base_position.x + button_spacing * 2, base_position.y)
+	nectar_sprayer_button.pressed.connect(func(): _on_place_tower_pressed("nectar_sprayer"))
+	button_parent.add_child(nectar_sprayer_button)
 
-	# Initialize button text
-	update_tower_type_button_text()
+	# Lightning Flower Button
+	lightning_flower_button = Button.new()
+	lightning_flower_button.name = "LightningFlowerButton"
+	lightning_flower_button.text = "R: Lightning (35)"
+	lightning_flower_button.size = button_size
+	lightning_flower_button.position = Vector2(base_position.x + button_spacing * 3, base_position.y)
+	lightning_flower_button.pressed.connect(func(): _on_place_tower_pressed("lightning_flower"))
+	button_parent.add_child(lightning_flower_button)
+
+	# Hide the old place tower button
+	if place_tower_button:
+		place_tower_button.visible = false
+
+	# Update selection to show current tower
+	update_button_selection()
+
+func update_button_selection():
+	"""Update button visual state to show current selection"""
+	# Reset all buttons
+	if stinger_button:
+		stinger_button.button_pressed = false
+	if propolis_bomber_button:
+		propolis_bomber_button.button_pressed = false
+	if nectar_sprayer_button:
+		nectar_sprayer_button.button_pressed = false
+	if lightning_flower_button:
+		lightning_flower_button.button_pressed = false
+
+	# Highlight current selection
+	match current_tower_type:
+		"stinger":
+			if stinger_button:
+				stinger_button.button_pressed = true
+		"propolis_bomber":
+			if propolis_bomber_button:
+				propolis_bomber_button.button_pressed = true
+		"nectar_sprayer":
+			if nectar_sprayer_button:
+				nectar_sprayer_button.button_pressed = true
+		"lightning_flower":
+			if lightning_flower_button:
+				lightning_flower_button.button_pressed = true
 
 func setup_speed_button():
-	# Create speed button next to tower type button
+	# Create speed button next to the tower buttons
 	speed_button = Button.new()
 	speed_button.name = "SpeedButton"
 	speed_button.size = Vector2(150, 40)
 
-	# Position it next to the tower type button
-	var tower_type_pos = tower_type_cycle_button.position
-	speed_button.position = Vector2(tower_type_pos.x + 220, tower_type_pos.y)
+	# Position it next to the lightning flower button
+	var lightning_pos = lightning_flower_button.position
+	speed_button.position = Vector2(lightning_pos.x + 150, lightning_pos.y)
 
 	# Connect signal
 	if speed_button:
 		speed_button.pressed.connect(_on_speed_button_pressed)
 
-	# Add to same parent as tower type button
-	tower_type_cycle_button.get_parent().add_child(speed_button)
-	
+	# Add to same parent as tower buttons
+	lightning_flower_button.get_parent().add_child(speed_button)
+
 	# Initialize button text
 	update_speed_button_text()
 
@@ -1430,3 +1498,298 @@ func _on_wave_composition_timer_timeout():
 func game_over():
 	print("Game Over!")
 	# TODO: Show game over screen
+
+# =============================================================================
+# INTEGRATION TEST FOR LIGHTNING FLOWER PLACEMENT & SELECTION
+# =============================================================================
+
+func run_lightning_flower_integration_test():
+	"""Run integration test for Lightning Flower placement and selection"""
+	print("\n" + "=".repeat(60))
+	print("🧪 RUNNING LIGHTNING FLOWER INTEGRATION TEST")
+	print("=".repeat(60))
+
+	await get_tree().process_frame  # Wait for scene to stabilize
+
+	# Test 1: Place Lightning Flower
+	print("Test 1: Placing Lightning Flower...")
+	var placement_success = await test_lightning_flower_placement()
+
+	if not placement_success:
+		print("❌ PLACEMENT FAILED - Aborting further tests")
+		return
+
+	# Test 2: Select Lightning Flower
+	print("Test 2: Selecting Lightning Flower...")
+	var selection_success = await test_lightning_flower_selection()
+
+	# Test 3: Range Indicator
+	print("Test 3: Testing Range Indicator...")
+	var range_success = test_lightning_flower_range_indicator()
+
+	# Final report
+	print("\n" + "=".repeat(60))
+	if placement_success and selection_success and range_success:
+		print("✅ ALL LIGHTNING FLOWER TESTS PASSED")
+	else:
+		print("❌ SOME LIGHTNING FLOWER TESTS FAILED")
+		print("Placement: %s, Selection: %s, Range: %s" % [
+			"✅" if placement_success else "❌",
+			"✅" if selection_success else "❌",
+			"✅" if range_success else "❌"
+		])
+	print("=".repeat(60))
+
+func test_lightning_flower_placement() -> bool:
+	"""Test Lightning Flower placement"""
+	# Ensure we have enough honey
+	GameManager.set_resource("honey", 100)
+
+	# Clear any existing placement mode
+	if tower_placer and tower_placer.current_mode != TowerPlacer.PlacementMode.NONE:
+		tower_placer.cancel_placement()
+
+	# Start Lightning Flower placement
+	_on_place_tower_pressed("lightning_flower")
+
+	await get_tree().process_frame
+
+	# Place at a safe position
+	var safe_position = Vector2(300, 300)
+	if tower_placer:
+		tower_placer.place_tower(safe_position)
+		await get_tree().process_frame
+
+		# Check if tower was placed
+		if tower_placer.placed_towers.size() > 0:
+			var last_tower = tower_placer.placed_towers[-1]
+			if last_tower and last_tower.tower_name == "Lightning Flower":
+				print("✅ Lightning Flower placed successfully at: ", safe_position)
+				return true
+			else:
+				print("❌ FAILED: Wrong tower type placed")
+		else:
+			print("❌ FAILED: No tower was placed")
+	else:
+		print("❌ FAILED: No tower placer available")
+
+	return false
+
+func test_lightning_flower_selection() -> bool:
+	"""Test Lightning Flower selection"""
+	if not tower_placer or tower_placer.placed_towers.size() == 0:
+		print("❌ FAILED: No towers available for selection")
+		return false
+
+	var lightning_flower = null
+	for tower in tower_placer.placed_towers:
+		if tower and tower.tower_name == "Lightning Flower":
+			lightning_flower = tower
+			break
+
+	if not lightning_flower:
+		print("❌ FAILED: No Lightning Flower found for selection")
+		return false
+
+	print("Attempting to select Lightning Flower at: ", lightning_flower.global_position)
+
+	# Clear any existing selection first
+	clear_tower_selection()
+	await get_tree().process_frame
+
+	# Select the Lightning Flower
+	select_tower(lightning_flower)
+	await get_tree().process_frame
+
+	# Check if selection worked
+	if selected_tower == lightning_flower:
+		print("✅ Lightning Flower selected successfully")
+		return true
+	else:
+		print("❌ FAILED: Lightning Flower selection failed")
+
+	return false
+
+func test_lightning_flower_range_indicator() -> bool:
+	"""Test Lightning Flower range indicator"""
+	# Range indicator should exist after selection
+	if range_indicator:
+		print("✅ Range indicator exists: ", range_indicator.name)
+
+		# Check if it has visual components
+		if range_indicator.get_child_count() > 0:
+			print("✅ Range indicator has visual components")
+
+			# Check position
+			if selected_tower:
+				var distance = range_indicator.global_position.distance_to(selected_tower.global_position)
+				if distance < 10:  # Should be very close
+					print("✅ Range indicator positioned correctly")
+					return true
+				else:
+					print("❌ FAILED: Range indicator position mismatch (distance: %.1f)" % distance)
+			else:
+				print("❌ FAILED: No selected tower for position comparison")
+		else:
+			print("❌ FAILED: Range indicator has no visual components")
+	else:
+		print("❌ FAILED: No range indicator found")
+
+	return false
+
+# =============================================================================
+# METAPROGRESSION FIELDS - 2x2 FIELDS WITH RANDOM TOWERS
+# =============================================================================
+
+func setup_metaprogression_fields():
+	"""Setup five 2x2 fields with random towers for metaprogression preparation"""
+	print("Setting up metaprogression fields...")
+	
+	# Define five 2x2 field positions (avoiding the path)
+	var field_positions = [
+		Vector2(1, 1),   # Top-left area
+		Vector2(8, 1),   # Top-middle area  
+		Vector2(15, 8),  # Bottom-right area
+		Vector2(2, 12),  # Bottom-left area
+		Vector2(17, 1)   # Top-right area
+	]
+	
+	var map_offset = get_meta("map_offset", Vector2.ZERO)
+	
+	for i in range(field_positions.size()):
+		var field_pos = field_positions[i]
+		create_metaprogression_field(field_pos, map_offset, i + 1)
+	
+	print("Metaprogression fields setup complete!")
+
+func create_metaprogression_field(grid_pos: Vector2, map_offset: Vector2, field_number: int):
+	"""Create a 2x2 field with random towers"""
+	print("Creating metaprogression field %d at grid position %s" % [field_number, grid_pos])
+	
+	# Calculate world position (2x2 field = 64x64 pixels)
+	var world_pos = Vector2(grid_pos.x * 32, grid_pos.y * 32) + map_offset
+	
+	# Create field background
+	var field_background = ColorRect.new()
+	field_background.name = "MetaprogressionField_%d" % field_number
+	field_background.size = Vector2(64, 64)  # 2x2 tiles
+	field_background.position = world_pos
+	field_background.color = Color(0.3, 0.3, 0.6, 0.8)  # Blue-purple for metaprogression
+	field_background.z_index = -3  # Above path but below other elements
+	$UI.add_child(field_background)
+	
+	# Create border for the field
+	create_field_border(field_background, world_pos)
+	
+	# Place random towers in the 2x2 field
+	place_random_towers_in_field(world_pos, field_number)
+	
+	print("Metaprogression field %d created at %s" % [field_number, world_pos])
+
+func create_field_border(field_background: ColorRect, world_pos: Vector2):
+	"""Create a border around the metaprogression field"""
+	var border = ColorRect.new()
+	border.name = "FieldBorder"
+	border.size = Vector2(64, 64)
+	border.position = world_pos
+	border.color = Color(0.0, 0.0, 0.0, 0.0)  # Transparent background
+	
+	# Create border using Line2D
+	var border_line = Line2D.new()
+	border_line.width = 3.0
+	border_line.default_color = Color.YELLOW
+	border_line.z_index = 1
+	
+	# Create rectangle border
+	var border_points = PackedVector2Array([
+		Vector2(0, 0),
+		Vector2(64, 0),
+		Vector2(64, 64),
+		Vector2(0, 64),
+		Vector2(0, 0)
+	])
+	border_line.points = border_points
+	border.add_child(border_line)
+	
+	field_background.add_child(border)
+
+func place_random_towers_in_field(field_pos: Vector2, field_number: int):
+	"""Place random towers in the 2x2 field"""
+	print("Placing random towers in field %d..." % field_number)
+	
+	# Define 4 positions within the 2x2 field (center of each 1x1 tile)
+	var tower_positions = [
+		field_pos + Vector2(16, 16),  # Top-left
+		field_pos + Vector2(48, 16),  # Top-right
+		field_pos + Vector2(16, 48),  # Bottom-left
+		field_pos + Vector2(48, 48)   # Bottom-right
+	]
+	
+	# Available tower types for random selection
+	var tower_types = ["stinger", "propolis_bomber", "nectar_sprayer", "lightning_flower"]
+	
+	for i in range(tower_positions.size()):
+		var tower_pos = tower_positions[i]
+		
+		# Randomly select tower type
+		var random_tower_type = tower_types[randi() % tower_types.size()]
+		
+		# Create and place the tower
+		create_metaprogression_tower(random_tower_type, tower_pos, field_number, i + 1)
+		
+		print("Placed %s at position %s in field %d" % [random_tower_type, tower_pos, field_number])
+
+func create_metaprogression_tower(tower_type: String, position: Vector2, field_number: int, tower_index: int):
+	"""Create a tower for metaprogression field"""
+	print("Creating metaprogression tower: %s at %s" % [tower_type, position])
+	
+	# Create tower instance based on type
+	var tower_script = null
+	match tower_type:
+		"stinger":
+			tower_script = load("res://scripts/BasicShooterTower.gd")  # Use BasicShooter as Stinger
+		"propolis_bomber":
+			tower_script = load("res://scripts/PiercingTower.gd")  # Use Piercing as Propolis Bomber
+		"nectar_sprayer":
+			tower_script = load("res://scripts/BasicShooterTower.gd")  # Use BasicShooter as Nectar Sprayer
+		"lightning_flower":
+			tower_script = load("res://scripts/BasicShooterTower.gd")  # Use BasicShooter as Lightning Flower
+		_:
+			tower_script = load("res://scripts/BasicShooterTower.gd")
+	
+	if tower_script:
+		var tower = tower_script.new() as Tower
+		
+		# Set tower properties
+		tower.tower_name = tower_type.replace("_", " ").capitalize()
+		tower.global_position = position
+		
+		# Make towers slightly different for visual variety
+		tower.damage = 10.0 + (field_number * 2.0) + (tower_index * 1.0)
+		tower.range = 80.0 + (field_number * 10.0)
+		tower.attack_speed = 1.5 - (field_number * 0.1)
+		
+		# Add to scene
+		$UI.add_child(tower)
+		
+		# Add to tower placer for management
+		if tower_placer:
+			tower_placer.placed_towers.append(tower)
+			tower.tower_destroyed.connect(tower_placer._on_tower_destroyed)
+		
+		# Create visual indicator for metaprogression towers
+		create_tower_metaprogression_indicator(tower, field_number, tower_index)
+		
+		print("Metaprogression tower created: %s at %s" % [tower.tower_name, position])
+
+func create_tower_metaprogression_indicator(tower: Tower, field_number: int, tower_index: int):
+	"""Create a visual indicator for metaprogression towers"""
+	var indicator = ColorRect.new()
+	indicator.name = "MetaprogressionIndicator_%d_%d" % [field_number, tower_index]
+	indicator.size = Vector2(8, 8)
+	indicator.position = tower.global_position + Vector2(-4, -4)
+	indicator.color = Color.CYAN
+	indicator.z_index = 10  # Above everything else
+	$UI.add_child(indicator)
+	
+	print("Metaprogression indicator created for tower in field %d" % field_number)

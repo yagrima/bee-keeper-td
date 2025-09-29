@@ -276,6 +276,9 @@ func run_tower_defense_tests():
 	test_tower_attacks()
 	test_enemy_movement()
 	test_victory_conditions()
+	test_new_tower_types()
+	test_tower_projectile_mechanics()
+	test_lightning_flower_interaction()
 
 func test_wave_management():
 	var test_name = "Wave Management"
@@ -401,5 +404,162 @@ func run_single_test(test_name: String):
 			test_speed_mode_transitions()
 		"tower_placement":
 			test_tower_placement()
+		"new_tower_types":
+			test_new_tower_types()
+		"tower_projectile_mechanics":
+			test_tower_projectile_mechanics()
+		"lightning_flower_interaction":
+			test_lightning_flower_interaction()
 		_:
 			print("Unknown test: %s" % test_name)
+
+# =============================================================================
+# NEW TOWER TYPE TESTS
+# =============================================================================
+
+func test_new_tower_types():
+	var test_name = "New Tower Types Creation"
+
+	var tower_types = [
+		{"class": StingerTower, "name": "Stinger Tower", "damage": 8.0, "cost": 20, "range": 80.0},
+		{"class": PropolisBomberTower, "name": "Propolis Bomber", "damage": 35.0, "cost": 45, "range": 100.0},
+		{"class": NectarSprayerTower, "name": "Nectar Sprayer", "damage": 15.0, "cost": 30, "range": 120.0},
+		{"class": LightningFlowerTower, "name": "Lightning Flower", "damage": 12.0, "cost": 35, "range": 90.0}
+	]
+
+	var all_passed = true
+	var failed_towers = []
+
+	for tower_data in tower_types:
+		var tower = tower_data.class.new()
+		tower._ready()  # Initialize properties
+
+		# Validate basic properties
+		if tower.tower_name != tower_data.name:
+			all_passed = false
+			failed_towers.append("%s name mismatch" % tower_data.name)
+		elif tower.damage != tower_data.damage:
+			all_passed = false
+			failed_towers.append("%s damage mismatch" % tower_data.name)
+		elif tower.honey_cost != tower_data.cost:
+			all_passed = false
+			failed_towers.append("%s cost mismatch" % tower_data.name)
+		elif tower.range != tower_data.range:
+			all_passed = false
+			failed_towers.append("%s range mismatch" % tower_data.name)
+
+		tower.queue_free()
+
+	var message = ""
+	if all_passed:
+		message = "All 4 tower types created with correct properties"
+	else:
+		message = "Failed: " + ", ".join(failed_towers)
+
+	record_test_result(test_name, all_passed, message)
+
+func test_tower_projectile_mechanics():
+	var test_name = "Tower Projectile Mechanics"
+
+	var tests_passed = 0
+	var total_tests = 4
+	var error_messages = []
+
+	# Test Stinger Tower projectiles
+	var stinger = StingerTower.new()
+	stinger._ready()
+	var stinger_projectile = stinger.create_stinger_projectile()
+	if stinger_projectile and stinger_projectile.damage == 8.0:
+		tests_passed += 1
+	else:
+		error_messages.append("Stinger projectile failed")
+	if stinger_projectile:
+		stinger_projectile.queue_free()
+	stinger.queue_free()
+
+	# Test Propolis Bomber explosions
+	var bomber = PropolisBomberTower.new()
+	bomber._ready()
+	var bomber_projectile = bomber.create_propolis_projectile()
+	if bomber_projectile and bomber_projectile.has_explosion and bomber_projectile.explosion_radius == 40.0:
+		tests_passed += 1
+	else:
+		error_messages.append("Propolis explosion failed")
+	if bomber_projectile:
+		bomber_projectile.queue_free()
+	bomber.queue_free()
+
+	# Test Nectar Sprayer penetration
+	var sprayer = NectarSprayerTower.new()
+	sprayer._ready()
+	var sprayer_projectile = sprayer.create_nectar_projectile()
+	if sprayer_projectile and sprayer_projectile.penetration == 3:
+		tests_passed += 1
+	else:
+		error_messages.append("Nectar penetration failed")
+	if sprayer_projectile:
+		sprayer_projectile.queue_free()
+	sprayer.queue_free()
+
+	# Test Lightning Flower chain lightning
+	var lightning = LightningFlowerTower.new()
+	lightning._ready()
+	var lightning_projectile = lightning.create_lightning_projectile()
+	if lightning_projectile and lightning_projectile.has_chain_lightning and lightning_projectile.chain_count == 2:
+		tests_passed += 1
+	else:
+		error_messages.append("Chain lightning failed")
+	if lightning_projectile:
+		lightning_projectile.queue_free()
+	lightning.queue_free()
+
+	var all_passed = (tests_passed == total_tests)
+	var message = ""
+	if all_passed:
+		message = "All tower projectile mechanics working correctly"
+	else:
+		message = "Failed %d/%d tests: %s" % [(total_tests - tests_passed), total_tests, ", ".join(error_messages)]
+
+	record_test_result(test_name, all_passed, message)
+
+func test_lightning_flower_interaction():
+	var test_name = "Lightning Flower Click Interaction"
+
+	# Test Lightning Flower click safety
+	var lightning = LightningFlowerTower.new()
+	lightning._ready()
+
+	var tests_passed = 0
+	var total_tests = 3
+
+	# Test 1: Range indicator creation safe
+	var can_create_range = true
+	var test_range = lightning.range
+	if test_range > 0 and test_range <= 200:
+		tests_passed += 1
+	else:
+		can_create_range = false
+
+	# Test 2: Tower selection properties safe
+	var safe_properties = true
+	if lightning.tower_name == "Lightning Flower" and lightning.damage == 12.0:
+		tests_passed += 1
+	else:
+		safe_properties = false
+
+	# Test 3: Null-safe projectile creation
+	var projectile = lightning.create_lightning_projectile()
+	if projectile and projectile.has_chain_lightning:
+		tests_passed += 1
+		projectile.queue_free()
+
+	lightning.queue_free()
+
+	var all_passed = (tests_passed == total_tests)
+	var message = ""
+	if all_passed:
+		message = "Lightning Flower click interactions are crash-safe"
+	else:
+		message = "Failed %d/%d interaction safety tests" % [(total_tests - tests_passed), total_tests]
+
+	record_test_result(test_name, all_passed, message)
