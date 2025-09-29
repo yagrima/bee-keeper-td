@@ -444,6 +444,9 @@ func _input(event):
 	elif event.keycode == KEY_Y and event.pressed:
 		# Test tower menu toggle system
 		test_tower_menu_toggle()
+	elif event.keycode == KEY_U and event.pressed:
+		# Test ephemeral tower prevention
+		test_ephemeral_tower_prevention()
 	elif HotkeyManager.is_hotkey_pressed(event, "save_game"):
 		# Save game
 		_on_save_game_pressed()
@@ -2140,6 +2143,8 @@ func handle_tower_hotkey(tower_type: String, tower_name: String):
 		tower_placer.cancel_placement()
 		# Clean up any mouse following system
 		cleanup_mouse_following_system()
+		# Verify cleanup was successful
+		verify_cleanup_success()
 		return
 	
 	# Check if we're already holding a tower (mouse following mode)
@@ -2177,7 +2182,128 @@ func cleanup_mouse_following_system():
 	# Remove pickup indicator
 	remove_pickup_indicator()
 	
+	# Force cleanup of any remaining ephemeral towers
+	force_cleanup_ephemeral_towers()
+	force_cleanup_range_indicators()
+	
 	print("Mouse following system cleaned up")
+
+func verify_cleanup_success():
+	"""Verify that cleanup was successful and no ephemeral towers remain"""
+	print("=== VERIFYING CLEANUP SUCCESS ===")
+	
+	# Check if picked_up_tower is null
+	if picked_up_tower != null:
+		print("ERROR: picked_up_tower is not null after cleanup!")
+		print("Tower name: %s" % picked_up_tower.tower_name)
+		print("Tower position: %s" % picked_up_tower.global_position)
+		print("Tower parent: %s" % picked_up_tower.get_parent().name)
+		# Force cleanup
+		force_cleanup_ephemeral_towers()
+	else:
+		print("✓ picked_up_tower is null")
+	
+	# Check if range_indicator is null
+	if range_indicator != null:
+		print("ERROR: range_indicator is not null after cleanup!")
+		print("Range indicator name: %s" % range_indicator.name)
+		print("Range indicator position: %s" % range_indicator.global_position)
+		# Force cleanup
+		force_cleanup_range_indicators()
+	else:
+		print("✓ range_indicator is null")
+	
+	# Check if _process is running
+	if is_processing():
+		print("ERROR: _process is still running after cleanup!")
+		set_process(false)
+		print("✓ _process stopped")
+	else:
+		print("✓ _process is not running")
+	
+	# Check for any remaining ephemeral towers in scene
+	check_for_ephemeral_towers()
+	
+	print("=== CLEANUP VERIFICATION COMPLETE ===")
+
+func force_cleanup_ephemeral_towers():
+	"""Force cleanup of any remaining ephemeral towers"""
+	print("=== FORCE CLEANING UP EPHEMERAL TOWERS ===")
+	
+	if picked_up_tower != null:
+		print("Force cleaning picked_up_tower: %s" % picked_up_tower.tower_name)
+		if is_instance_valid(picked_up_tower):
+			picked_up_tower.queue_free()
+		picked_up_tower = null
+	
+	# Check for any towers with "UnifiedTower" in name
+	var all_towers = get_tree().get_nodes_in_group("towers")
+	for tower in all_towers:
+		if tower.name.begins_with("UnifiedTower"):
+			print("Found ephemeral tower: %s" % tower.name)
+			tower.queue_free()
+	
+	# Check for any towers in UI canvas
+	var ui_canvas = $UI
+	for child in ui_canvas.get_children():
+		if child.name.begins_with("UnifiedTower"):
+			print("Found ephemeral tower in UI: %s" % child.name)
+			child.queue_free()
+	
+	print("=== FORCE CLEANUP COMPLETE ===")
+
+func force_cleanup_range_indicators():
+	"""Force cleanup of any remaining range indicators"""
+	print("=== FORCE CLEANING UP RANGE INDICATORS ===")
+	
+	if range_indicator != null:
+		print("Force cleaning range_indicator: %s" % range_indicator.name)
+		if is_instance_valid(range_indicator):
+			range_indicator.queue_free()
+		range_indicator = null
+	
+	# Check for any range indicators in scene
+	var all_nodes = get_tree().get_nodes_in_group("range_indicators")
+	for node in all_nodes:
+		if node.name.begins_with("RangeIndicator"):
+			print("Found range indicator: %s" % node.name)
+			node.queue_free()
+	
+	# Check for any range indicators in UI canvas
+	var ui_canvas = $UI
+	for child in ui_canvas.get_children():
+		if child.name.begins_with("RangeIndicator"):
+			print("Found range indicator in UI: %s" % child.name)
+			child.queue_free()
+	
+	print("=== FORCE CLEANUP RANGE INDICATORS COMPLETE ===")
+
+func check_for_ephemeral_towers():
+	"""Check for any remaining ephemeral towers in the scene"""
+	print("=== CHECKING FOR EPHEMERAL TOWERS ===")
+	
+	var ephemeral_count = 0
+	
+	# Check main scene
+	for child in get_children():
+		if child.name.begins_with("UnifiedTower"):
+			print("Found ephemeral tower in main scene: %s" % child.name)
+			ephemeral_count += 1
+	
+	# Check UI canvas
+	var ui_canvas = $UI
+	for child in ui_canvas.get_children():
+		if child.name.begins_with("UnifiedTower"):
+			print("Found ephemeral tower in UI: %s" % child.name)
+			ephemeral_count += 1
+	
+	if ephemeral_count > 0:
+		print("ERROR: Found %d ephemeral towers!" % ephemeral_count)
+		force_cleanup_ephemeral_towers()
+	else:
+		print("✓ No ephemeral towers found")
+	
+	print("=== EPHEMERAL TOWER CHECK COMPLETE ===")
 
 func start_unified_tower_placement(tower_type: String, tower_name: String):
 	"""Start unified tower placement system"""
@@ -2303,6 +2429,124 @@ func test_tower_menu_toggle():
 	print("After Q press again - picked_up_tower: %s" % (picked_up_tower != null))
 	
 	print("=== TOWER MENU TOGGLE TEST COMPLETE ===")
+
+func test_ephemeral_tower_prevention():
+	"""Comprehensive test to prevent ephemeral towers"""
+	print("=== TESTING EPHEMERAL TOWER PREVENTION ===")
+	
+	# Test 1: Basic toggle test
+	print("TEST 1: Basic toggle test")
+	test_basic_toggle()
+	
+	# Test 2: Multiple toggle test
+	print("TEST 2: Multiple toggle test")
+	test_multiple_toggle()
+	
+	# Test 3: Cross-tower toggle test
+	print("TEST 3: Cross-tower toggle test")
+	test_cross_tower_toggle()
+	
+	# Test 4: Force cleanup test
+	print("TEST 4: Force cleanup test")
+	test_force_cleanup()
+	
+	print("=== EPHEMERAL TOWER PREVENTION TEST COMPLETE ===")
+
+func test_basic_toggle():
+	"""Test basic toggle functionality"""
+	print("--- Basic Toggle Test ---")
+	
+	# Initial state
+	print("Initial state:")
+	print("  is_in_tower_placement: %s" % is_in_tower_placement)
+	print("  picked_up_tower: %s" % (picked_up_tower != null))
+	print("  range_indicator: %s" % (range_indicator != null))
+	
+	# Open menu
+	print("Opening Q menu...")
+	handle_tower_hotkey("stinger", "Stinger Tower")
+	print("After opening:")
+	print("  is_in_tower_placement: %s" % is_in_tower_placement)
+	print("  picked_up_tower: %s" % (picked_up_tower != null))
+	print("  range_indicator: %s" % (range_indicator != null))
+	
+	# Close menu
+	print("Closing Q menu...")
+	handle_tower_hotkey("stinger", "Stinger Tower")
+	print("After closing:")
+	print("  is_in_tower_placement: %s" % is_in_tower_placement)
+	print("  picked_up_tower: %s" % (picked_up_tower != null))
+	print("  range_indicator: %s" % (range_indicator != null))
+	
+	# Verify no ephemeral towers
+	check_for_ephemeral_towers()
+	
+	print("--- Basic Toggle Test Complete ---")
+
+func test_multiple_toggle():
+	"""Test multiple toggle operations"""
+	print("--- Multiple Toggle Test ---")
+	
+	# Test multiple Q toggles
+	for i in range(5):
+		print("Toggle %d:" % (i + 1))
+		handle_tower_hotkey("stinger", "Stinger Tower")
+		print("  is_in_tower_placement: %s" % is_in_tower_placement)
+		print("  picked_up_tower: %s" % (picked_up_tower != null))
+		print("  range_indicator: %s" % (range_indicator != null))
+		
+		# Wait a frame
+		await get_tree().process_frame
+	
+	# Verify no ephemeral towers
+	check_for_ephemeral_towers()
+	
+	print("--- Multiple Toggle Test Complete ---")
+
+func test_cross_tower_toggle():
+	"""Test toggling between different tower types"""
+	print("--- Cross-Tower Toggle Test ---")
+	
+	# Test Q -> W -> E -> R
+	var tower_types = ["stinger", "propolis_bomber", "nectar_sprayer", "lightning_flower"]
+	var tower_names = ["Stinger Tower", "Propolis Bomber Tower", "Nectar Sprayer Tower", "Lightning Flower Tower"]
+	
+	for i in range(tower_types.size()):
+		print("Testing %s:" % tower_names[i])
+		handle_tower_hotkey(tower_types[i], tower_names[i])
+		print("  is_in_tower_placement: %s" % is_in_tower_placement)
+		print("  picked_up_tower: %s" % (picked_up_tower != null))
+		print("  range_indicator: %s" % (range_indicator != null))
+		
+		# Wait a frame
+		await get_tree().process_frame
+	
+	# Verify no ephemeral towers
+	check_for_ephemeral_towers()
+	
+	print("--- Cross-Tower Toggle Test Complete ---")
+
+func test_force_cleanup():
+	"""Test force cleanup functionality"""
+	print("--- Force Cleanup Test ---")
+	
+	# Create some ephemeral towers
+	print("Creating ephemeral towers...")
+	start_unified_tower_placement("stinger", "Stinger Tower")
+	start_unified_tower_placement("propolis_bomber", "Propolis Bomber Tower")
+	
+	# Check for ephemeral towers
+	check_for_ephemeral_towers()
+	
+	# Force cleanup
+	print("Force cleaning up...")
+	force_cleanup_ephemeral_towers()
+	force_cleanup_range_indicators()
+	
+	# Verify cleanup
+	check_for_ephemeral_towers()
+	
+	print("--- Force Cleanup Test Complete ---")
 
 func create_tower_at_mouse_position(tower_name: String):
 	"""Create a tower at mouse position via hotkey"""
