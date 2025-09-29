@@ -1001,7 +1001,7 @@ func setup_wave_countdown_ui():
 	# Position it below the wave composition label
 	wave_countdown_label.position = Vector2(20, 90)  # Below wave composition
 	wave_countdown_label.add_theme_font_size_override("font_size", 12)
-	wave_countdown_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.0))  # Orange/yellow for countdown
+	wave_countdown_label.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))  # Same color as other labels
 	wave_countdown_label.text = ""
 	wave_countdown_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	wave_countdown_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
