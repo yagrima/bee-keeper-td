@@ -48,6 +48,10 @@ var is_placing_tower: bool = false
 var wave_countdown_timer: Timer
 var countdown_seconds: float = 0.0
 
+# Metaprogression system
+var metaprogression_towers: Array[Tower] = []  # Towers in metaprogression fields
+var picked_up_tower: Tower = null  # Currently picked up tower
+
 func _ready():
 	GameManager.change_game_state(GameManager.GameState.TOWER_DEFENSE)
 
@@ -402,6 +406,10 @@ func _input(event):
 	if event is InputEventMouseButton and event.pressed:
 		print("Mouse button pressed: ", event.button_index, " at position: ", event.position)
 		if event.button_index == MOUSE_BUTTON_LEFT:
+			# Check for metaprogression tower pickup first
+			if handle_metaprogression_tower_pickup(event.position):
+				return
+			# Then handle regular tower selection
 			handle_tower_click(event.position)
 		elif event.button_index == MOUSE_BUTTON_RIGHT:
 			# Right click - clear selection
@@ -1707,6 +1715,9 @@ func setup_metaprogression_fields():
 		var field_pos = field_positions[i]
 		create_metaprogression_field(field_pos, map_offset, i + 1)
 	
+	# Assign random towers to each field
+	assign_random_towers_to_fields()
+	
 	print("Metaprogression fields setup complete!")
 
 func create_metaprogression_field(grid_pos: Vector2, map_offset: Vector2, field_number: int):
@@ -1732,6 +1743,253 @@ func create_metaprogression_field(grid_pos: Vector2, map_offset: Vector2, field_
 	create_field_label(field_background, world_pos, field_number)
 	
 	print("Metaprogression field %d created at %s (empty)" % [field_number, world_pos])
+
+func assign_random_towers_to_fields():
+	"""Assign random towers to each metaprogression field"""
+	print("Assigning random towers to metaprogression fields...")
+	
+	# Define the four basic tower types
+	var tower_types = ["stinger", "propolis_bomber", "nectar_sprayer", "lightning_flower"]
+	
+	# Clear existing towers
+	metaprogression_towers.clear()
+	
+	# Calculate field positions (same as in setup_metaprogression_fields)
+	var start_x = 2
+	var field_spacing = 3
+	var row_y = 16
+	var map_offset = get_meta("map_offset", Vector2.ZERO)
+	
+	for i in range(5):
+		# Get random tower type
+		var random_tower_type = tower_types[randi() % tower_types.size()]
+		
+		# Calculate field position
+		var field_x = start_x + (i * field_spacing)
+		var field_pos = Vector2(field_x, row_y)
+		var world_pos = Vector2(field_pos.x * 32, field_pos.y * 32) + map_offset
+		
+		# Create tower in field
+		var tower = create_metaprogression_tower(random_tower_type, world_pos, i + 1)
+		if tower:
+			metaprogression_towers.append(tower)
+			print("Field %d: Assigned %s tower" % [i + 1, random_tower_type])
+	
+	print("Random tower assignment complete!")
+
+func create_metaprogression_tower(tower_type: String, world_pos: Vector2, field_number: int) -> Tower:
+	"""Create a tower in a metaprogression field"""
+	print("Creating %s tower in field %d at %s" % [tower_type, field_number, world_pos])
+	
+	var tower_scene: PackedScene
+	var tower_name: String
+	
+	# Load the appropriate tower scene
+	match tower_type:
+		"stinger":
+			tower_scene = preload("res://scripts/StingerTower.gd")
+			tower_name = "Stinger Tower"
+		"propolis_bomber":
+			tower_scene = preload("res://scripts/PropolisBomberTower.gd")
+			tower_name = "Propolis Bomber Tower"
+		"nectar_sprayer":
+			tower_scene = preload("res://scripts/NectarSprayerTower.gd")
+			tower_name = "Nectar Sprayer Tower"
+		"lightning_flower":
+			tower_scene = preload("res://scripts/LightningFlowerTower.gd")
+			tower_name = "Lightning Flower Tower"
+		_:
+			print("Unknown tower type: %s" % tower_type)
+			return null
+	
+	# Create tower instance
+	var tower = tower_scene.instantiate()
+	if not tower:
+		print("Failed to create tower instance for type: %s" % tower_type)
+		return null
+	
+	# Set tower properties
+	tower.name = "MetaprogressionTower_%d" % field_number
+	tower.position = world_pos
+	tower.tower_name = tower_name
+	
+	# Add to scene
+	add_child(tower)
+	
+	# Make tower clickable for pickup
+	tower.set_meta("is_metaprogression_tower", true)
+	tower.set_meta("field_number", field_number)
+	
+	print("Metaprogression tower created: %s in field %d" % [tower_name, field_number])
+	return tower
+
+# =============================================================================
+# METAPROGRESSION TOWER PICKUP SYSTEM
+# =============================================================================
+
+func handle_metaprogression_tower_pickup(click_position: Vector2) -> bool:
+	"""Handle pickup of metaprogression towers"""
+	print("Checking for metaprogression tower pickup at: %s" % click_position)
+	
+	# Check if we're already holding a tower
+	if picked_up_tower != null:
+		# Try to place the picked up tower
+		if try_place_picked_up_tower(click_position):
+			return true
+		return false
+	
+	# Check for metaprogression towers at click position
+	for tower in metaprogression_towers:
+		if tower and is_instance_valid(tower):
+			var distance = click_position.distance_to(tower.position)
+			if distance < 32:  # Within tower radius
+				pickup_metaprogression_tower(tower)
+				return true
+	
+	return false
+
+func pickup_metaprogression_tower(tower: Tower):
+	"""Pick up a metaprogression tower"""
+	print("Picking up metaprogression tower: %s" % tower.tower_name)
+	
+	# Store the picked up tower
+	picked_up_tower = tower
+	
+	# Hide the original tower
+	tower.visible = false
+	
+	# Create a visual indicator that we're holding a tower
+	create_pickup_indicator(tower)
+	
+	print("Metaprogression tower picked up: %s" % tower.tower_name)
+
+func try_place_picked_up_tower(click_position: Vector2) -> bool:
+	"""Try to place the picked up tower at the click position"""
+	if picked_up_tower == null:
+		return false
+	
+	print("Trying to place picked up tower at: %s" % click_position)
+	
+	# Check if position is valid for tower placement
+	if is_valid_tower_placement_position(click_position):
+		# Place the tower
+		place_picked_up_tower(click_position)
+		return true
+	else:
+		# Return tower to original position
+		return_picked_up_tower()
+		return false
+
+func is_valid_tower_placement_position(position: Vector2) -> bool:
+	"""Check if position is valid for tower placement"""
+	# Check if position is within the play area (20x15 grid)
+	var grid_pos = Vector2(int(position.x / 32), int(position.y / 32))
+	
+	# Play area is 20x15 (0-19 x 0-14)
+	if grid_pos.x < 0 or grid_pos.x >= 20 or grid_pos.y < 0 or grid_pos.y >= 15:
+		print("Position outside play area: %s" % grid_pos)
+		return false
+	
+	# Check if position is not on the path
+	if is_position_on_path(position):
+		print("Position on path: %s" % position)
+		return false
+	
+	# Check if position is not occupied by another tower
+	if is_position_occupied(position):
+		print("Position occupied: %s" % position)
+		return false
+	
+	return true
+
+func is_position_on_path(position: Vector2) -> bool:
+	"""Check if position is on the enemy path"""
+	# This is a simplified check - you might want to implement a more sophisticated path detection
+	var grid_pos = Vector2(int(position.x / 32), int(position.y / 32))
+	
+	# Define path positions (simplified)
+	var path_positions = [
+		Vector2(0, 7), Vector2(1, 7), Vector2(2, 7), Vector2(3, 7), Vector2(4, 7), Vector2(5, 7),
+		Vector2(5, 8), Vector2(5, 9), Vector2(5, 10), Vector2(5, 11),
+		Vector2(6, 11), Vector2(7, 11), Vector2(8, 11), Vector2(9, 11), Vector2(10, 11), Vector2(11, 11), Vector2(12, 11), Vector2(13, 11), Vector2(14, 11),
+		Vector2(14, 10), Vector2(14, 9), Vector2(14, 8), Vector2(14, 7), Vector2(14, 6), Vector2(14, 5), Vector2(14, 4), Vector2(14, 3),
+		Vector2(15, 3), Vector2(16, 3), Vector2(17, 3), Vector2(18, 3), Vector2(19, 3)
+	]
+	
+	return grid_pos in path_positions
+
+func is_position_occupied(position: Vector2) -> bool:
+	"""Check if position is occupied by another tower"""
+	# Check tower placer towers
+	if tower_placer and tower_placer.placed_towers:
+		for tower in tower_placer.placed_towers:
+			if tower and is_instance_valid(tower):
+				var distance = position.distance_to(tower.position)
+				if distance < 32:  # Within tower radius
+					return true
+	
+	return false
+
+func place_picked_up_tower(position: Vector2):
+	"""Place the picked up tower at the specified position"""
+	print("Placing picked up tower at: %s" % position)
+	
+	if picked_up_tower == null:
+		return
+	
+	# Set tower position
+	picked_up_tower.position = position
+	
+	# Make tower visible
+	picked_up_tower.visible = true
+	
+	# Remove metaprogression tower metadata
+	picked_up_tower.remove_meta("is_metaprogression_tower")
+	picked_up_tower.remove_meta("field_number")
+	
+	# Add to tower placer
+	if tower_placer:
+		tower_placer.placed_towers.append(picked_up_tower)
+	
+	# Remove from metaprogression towers
+	metaprogression_towers.erase(picked_up_tower)
+	
+	# Clear picked up tower
+	picked_up_tower = null
+	
+	# Remove pickup indicator
+	remove_pickup_indicator()
+	
+	print("Metaprogression tower placed successfully!")
+
+func return_picked_up_tower():
+	"""Return the picked up tower to its original position"""
+	print("Returning picked up tower to original position")
+	
+	if picked_up_tower == null:
+		return
+	
+	# Make tower visible again
+	picked_up_tower.visible = true
+	
+	# Clear picked up tower
+	picked_up_tower = null
+	
+	# Remove pickup indicator
+	remove_pickup_indicator()
+	
+	print("Metaprogression tower returned to original position")
+
+func create_pickup_indicator(tower: Tower):
+	"""Create visual indicator for picked up tower"""
+	# This could be a cursor change, visual effect, or UI indicator
+	print("Creating pickup indicator for: %s" % tower.tower_name)
+	# Implementation depends on desired visual feedback
+
+func remove_pickup_indicator():
+	"""Remove pickup indicator"""
+	print("Removing pickup indicator")
+	# Implementation depends on desired visual feedback
 
 func create_field_border(field_background: ColorRect, world_pos: Vector2):
 	"""Create a border around the metaprogression field"""
