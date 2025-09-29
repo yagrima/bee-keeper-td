@@ -2203,13 +2203,19 @@ func create_unified_tower(tower_name: String, position: Vector2) -> Tower:
 	tower.name = "UnifiedTower_" + tower_type
 	tower.tower_name = tower_name
 	
-	# Add to main scene first
-	add_child(tower)
+	# Add to UI canvas instead of main scene for better visibility
+	var ui_canvas = $UI
+	ui_canvas.add_child(tower)
 	
 	# Set position after adding to scene
 	tower.global_position = position
 	
-	print("Unified tower created: %s at %s" % [tower_name, tower.global_position])
+	# Set high z_index to ensure visibility above game area
+	tower.z_index = 100
+	
+	print("Tower added to UI canvas with z_index: %d" % tower.z_index)
+	
+	print("Unified tower created: %s at %s with z_index: %d" % [tower_name, tower.global_position, tower.z_index])
 	
 	return tower
 
@@ -2312,6 +2318,8 @@ func _process(delta):
 		# Update range indicator position as well
 		if range_indicator != null and is_instance_valid(range_indicator):
 			range_indicator.global_position = mouse_pos
+			# Ensure range indicator stays above tower
+			range_indicator.z_index = picked_up_tower.z_index + 1
 	else:
 		# If we're in normal placement mode, stop the process
 		if is_in_tower_placement:
@@ -2352,10 +2360,11 @@ func show_tower_range_at_mouse_position(tower: Tower):
 	# Position at mouse position immediately
 	var mouse_pos = get_global_mouse_position()
 	range_indicator.global_position = mouse_pos
-	range_indicator.z_index = 5  # Ensure visibility
+	range_indicator.z_index = 101  # Higher than tower to ensure visibility
 	
-	# Add to main scene
-	add_child(range_indicator)
+	# Add to UI canvas for better visibility
+	var ui_canvas = $UI
+	ui_canvas.add_child(range_indicator)
 	
 	# Force position update after adding to scene
 	range_indicator.global_position = mouse_pos
