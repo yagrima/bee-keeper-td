@@ -20,7 +20,9 @@ var hotkeys: Dictionary = {
 	"place_stinger": KEY_Q,
 	"place_propolis_bomber": KEY_W,
 	"place_nectar_sprayer": KEY_E,
-	"place_lightning_flower": KEY_R
+	"place_lightning_flower": KEY_R,
+	# Metaprogression hotkeys
+	"pickup_metaprogression_tower": KEY_G
 }
 
 # Action names for display
@@ -38,7 +40,9 @@ var action_names: Dictionary = {
 	"place_stinger": "Stinger Tower",
 	"place_propolis_bomber": "Propolis Bomber",
 	"place_nectar_sprayer": "Nectar Sprayer",
-	"place_lightning_flower": "Lightning Flower"
+	"place_lightning_flower": "Lightning Flower",
+	# Metaprogression action names
+	"pickup_metaprogression_tower": "Pickup Metaprogression Tower"
 }
 
 func _ready():
