@@ -39,3 +39,15 @@ dist/
 
 # Addons (if not needed in version control)
 # addons/
+
+# Environment variables & secrets (NEVER commit!)
+*.env
+supabase.env
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Supabase credentials
+supabase/
+.supabase/
