@@ -1901,14 +1901,24 @@ func try_place_picked_up_tower(click_position: Vector2) -> bool:
 	if picked_up_tower == null:
 		return false
 	
-	print("Trying to place picked up tower at: %s" % click_position)
+	print("=== TRYING TO PLACE PICKED UP TOWER ===")
+	print("Click position (UI): %s" % click_position)
 	
-	# Check if position is valid for tower placement
-	if is_valid_tower_placement_position(click_position):
+	# Get map offset for coordinate conversion
+	var map_offset = get_meta("map_offset", Vector2.ZERO)
+	
+	# Convert click position (UI coordinates) to map coordinates
+	var map_position = click_position - map_offset
+	print("Map position: %s" % map_position)
+	
+	# Check if position is valid for tower placement (using map coordinates)
+	if is_valid_tower_placement_position(map_position):
+		print("✅ Position is valid, placing tower")
 		# Place the tower
 		place_picked_up_tower(click_position)
 		return true
 	else:
+		print("❌ Position is invalid, returning tower")
 		# Return tower to original position
 		return_picked_up_tower()
 		return false
@@ -1952,27 +1962,34 @@ func is_position_on_path(position: Vector2) -> bool:
 	return grid_pos in path_positions
 
 func is_position_occupied(position: Vector2) -> bool:
-	"""Check if position is occupied by another tower"""
+	"""Check if position is occupied by another tower (position in map coordinates)"""
 	print("Checking if position %s is occupied..." % position)
 	
-	# Check tower placer towers
+	# Grid-align the position for consistent checking
+	var grid_pos = Vector2(int(position.x / 32), int(position.y / 32))
+	var aligned_position = Vector2(grid_pos.x * 32 + 16, grid_pos.y * 32 + 16)
+	print("  Aligned position: %s (grid: %s)" % [aligned_position, grid_pos])
+	
+	# Check tower placer towers (these are in map coordinates without offset)
 	if tower_placer and tower_placer.placed_towers:
 		for tower in tower_placer.placed_towers:
 			if tower and is_instance_valid(tower):
 				# Use global_position for proper comparison
-				var distance = position.distance_to(tower.global_position)
+				var distance = aligned_position.distance_to(tower.global_position)
 				print("  Tower at %s, distance: %.2f" % [tower.global_position, distance])
-				if distance < 32:  # Within tower radius
-					print("  ❌ Position occupied by tower!")
+				if distance < 20:  # Within tower radius (reduced for grid cell)
+					print("  ❌ Position occupied by placed tower!")
 					return true
 	
-	# Check metaprogression towers
+	# Check metaprogression towers (these are in UI coordinates with offset)
+	var map_offset = get_meta("map_offset", Vector2.ZERO)
 	for tower in metaprogression_towers:
 		if tower and is_instance_valid(tower):
-			# Use global_position for proper comparison
-			var distance = position.distance_to(tower.global_position)
-			print("  Metaprogression tower at %s, distance: %.2f" % [tower.global_position, distance])
-			if distance < 32:  # Within tower radius
+			# Convert metaprogression tower position to map coordinates
+			var tower_map_pos = tower.global_position - map_offset
+			var distance = aligned_position.distance_to(tower_map_pos)
+			print("  Metaprogression tower at %s (map: %s), distance: %.2f" % [tower.global_position, tower_map_pos, distance])
+			if distance < 20:  # Within tower radius (reduced for grid cell)
 				print("  ❌ Position occupied by metaprogression tower!")
 				return true
 	
@@ -1980,9 +1997,9 @@ func is_position_occupied(position: Vector2) -> bool:
 	return false
 
 func place_picked_up_tower(position: Vector2):
-	"""Place the picked up tower at the specified position"""
+	"""Place the picked up tower at the specified position (position in UI coordinates)"""
 	print("=== PLACING PICKED UP TOWER ===")
-	print("Click position: %s" % position)
+	print("Click position (UI): %s" % position)
 	
 	if picked_up_tower == null:
 		print("ERROR: No tower to place!")
@@ -1994,19 +2011,22 @@ func place_picked_up_tower(position: Vector2):
 	# Convert click position (UI coordinates) to map coordinates
 	var map_position = position - map_offset
 	
-	# Align to grid (32x32 tiles)
+	# Align to grid (32x32 tiles) and center in grid cell
 	var grid_pos = Vector2(int(map_position.x / 32), int(map_position.y / 32))
 	var aligned_map_position = Vector2(grid_pos.x * 32 + 16, grid_pos.y * 32 + 16)  # Center in grid cell
-	var aligned_ui_position = aligned_map_position + map_offset
 	
-	print("Map position: %s, Grid: %s, Aligned map: %s, Aligned UI: %s" % [map_position, grid_pos, aligned_map_position, aligned_ui_position])
+	print("Map position: %s, Grid: %s, Aligned map: %s" % [map_position, grid_pos, aligned_map_position])
 	
-	# Move tower from UI canvas to main scene for proper placement
-	var ui_canvas = $UI
-	if picked_up_tower.get_parent() == ui_canvas:
-		ui_canvas.remove_child(picked_up_tower)
-		add_child(picked_up_tower)
-		print("Moved tower from UI canvas to main scene")
+	# Get current parent
+	var current_parent = picked_up_tower.get_parent()
+	
+	# Move tower from current parent to main scene for proper placement
+	if current_parent:
+		current_parent.remove_child(picked_up_tower)
+		print("Removed tower from parent: %s" % current_parent.name)
+	
+	add_child(picked_up_tower)
+	print("Added tower to main scene")
 	
 	# Reset z_index for main scene placement
 	picked_up_tower.z_index = 0
@@ -2019,8 +2039,9 @@ func place_picked_up_tower(position: Vector2):
 	
 	print("Tower positioned at: %s" % picked_up_tower.global_position)
 	print("Tower parent: %s" % picked_up_tower.get_parent().name)
+	print("Tower visible: %s" % picked_up_tower.visible)
 	
-	# Remove metaprogression tower metadata (but keep originals for potential return)
+	# Remove metaprogression tower metadata
 	picked_up_tower.remove_meta("is_metaprogression_tower")
 	picked_up_tower.remove_meta("field_number")
 	picked_up_tower.remove_meta("original_position")
@@ -2030,13 +2051,13 @@ func place_picked_up_tower(position: Vector2):
 	# Add to tower placer
 	if tower_placer:
 		tower_placer.placed_towers.append(picked_up_tower)
-		print("Tower added to tower_placer.placed_towers")
+		print("Tower added to tower_placer.placed_towers (count: %d)" % tower_placer.placed_towers.size())
 	else:
 		print("WARNING: tower_placer is null!")
 	
 	# Remove from metaprogression towers
 	metaprogression_towers.erase(picked_up_tower)
-	print("Tower removed from metaprogression_towers")
+	print("Tower removed from metaprogression_towers (remaining: %d)" % metaprogression_towers.size())
 	
 	# Clear picked up tower
 	picked_up_tower = null
