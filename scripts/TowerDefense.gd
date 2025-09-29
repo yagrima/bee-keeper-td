@@ -320,6 +320,9 @@ func _on_start_wave_pressed():
 
 	# Clear tower selection when starting wave
 	clear_tower_selection()
+	
+	# Stop any existing auto wave timer
+	stop_auto_wave_timer()
 
 	wave_manager.start_wave(current_wave)
 	if start_wave_button:
@@ -681,12 +684,19 @@ func _on_wave_started(wave_number: int):
 func _on_wave_completed(wave_number: int, enemies_killed: int):
 	print("Wave ", wave_number, " completed! Killed ", enemies_killed, " enemies")
 	current_wave += 1
-	if start_wave_button:
-		start_wave_button.disabled = false
-	update_ui()  # Update UI for next wave
+	
+	# Check if all waves are completed
+	if current_wave > 5:
+		_on_all_waves_completed()
+		return
 	
 	# Stop the wave composition timer
 	stop_wave_composition_timer()
+	
+	# Start automatic next wave after delay based on speed mode
+	start_automatic_next_wave()
+	
+	update_ui()  # Update UI for next wave
 
 func _on_enemy_spawned(enemy: Enemy):
 	print("Enemy spawned: ", enemy.enemy_name)
@@ -696,6 +706,9 @@ func _on_all_waves_completed():
 	
 	# Stop the wave composition timer
 	stop_wave_composition_timer()
+	
+	# Stop any auto wave timer
+	stop_auto_wave_timer()
 	
 	# Delay victory screen by 0.01 seconds to allow last enemy to despawn
 	var timer = get_tree().create_timer(0.01)
@@ -1731,3 +1744,64 @@ func create_field_label(field_background: ColorRect, world_pos: Vector2, field_n
 
 # Metaprogression fields are now empty by design
 # Towers will be added later through the metaprogression system
+
+# =============================================================================
+# AUTOMATIC WAVE STARTING SYSTEM
+# =============================================================================
+
+func start_automatic_next_wave():
+	"""Start the next wave automatically after a delay based on speed mode"""
+	var delay_seconds = get_wave_delay_for_speed_mode()
+	
+	print("Starting automatic next wave in %.1f seconds (speed mode: %d)" % [delay_seconds, speed_mode])
+	
+	# Create and start timer for automatic wave start
+	var timer = Timer.new()
+	timer.name = "AutoWaveTimer"
+	timer.wait_time = delay_seconds
+	timer.one_shot = true
+	timer.timeout.connect(_on_auto_wave_timer_timeout)
+	add_child(timer)
+	timer.start()
+	
+	# Update UI to show countdown
+	update_wave_countdown_ui(delay_seconds)
+
+func get_wave_delay_for_speed_mode() -> float:
+	"""Get the delay in seconds for the next wave based on current speed mode"""
+	match speed_mode:
+		0:  # Normal speed (1x)
+			return 15.0
+		1:  # Double speed (2x)
+			return 10.0
+		2:  # Triple speed (3x)
+			return 5.0
+		_:
+			return 15.0
+
+func _on_auto_wave_timer_timeout():
+	"""Called when the automatic wave timer expires"""
+	print("Auto wave timer expired - starting next wave")
+	
+	# Clean up the timer
+	var timer = get_node("AutoWaveTimer")
+	if timer:
+		timer.queue_free()
+	
+	# Start the next wave
+	wave_manager.start_wave(current_wave)
+	
+	# Update UI
+	update_ui()
+
+func update_wave_countdown_ui(delay_seconds: float):
+	"""Update UI to show countdown for next wave"""
+	# This could be expanded to show a countdown timer in the UI
+	print("Next wave will start in %.1f seconds" % delay_seconds)
+
+func stop_auto_wave_timer():
+	"""Stop the automatic wave timer if it exists"""
+	var timer = get_node_or_null("AutoWaveTimer")
+	if timer:
+		timer.queue_free()
+		print("Auto wave timer stopped")
