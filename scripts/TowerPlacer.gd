@@ -326,19 +326,74 @@ func get_tower_range_preview(tower_type: String) -> float:
 			return 100.0  # Default range
 
 func cancel_placement():
+	print("=== CANCELING TOWER PLACEMENT ===")
+	print("Current mode: %s" % current_mode)
+	print("Selected tower type: %s" % selected_tower_type)
+	
 	current_mode = PlacementMode.NONE
+	selected_tower_type = ""
+	
+	# Aggressive cleanup
 	cleanup_preview()
-
+	
+	# Wait for cleanup to complete
+	await get_tree().process_frame
+	
+	# Force cleanup again
+	force_cleanup_all_preview_objects()
+	
 	# Reset cursor to normal
 	Input.set_default_cursor_shape(Input.CURSOR_ARROW)
 
 	placement_mode_changed.emit(false)
+	
+	print("=== TOWER PLACEMENT CANCELED ===")
 
 func cleanup_preview():
+	print("=== CLEANING UP TOWER PLACEMENT PREVIEW ===")
+	
 	if placement_preview:
-		placement_preview.queue_free()
+		print("Cleaning up placement_preview: %s" % placement_preview.name)
+		if is_instance_valid(placement_preview):
+			placement_preview.queue_free()
 		placement_preview = null
-	range_preview = null
+	
+	if range_preview:
+		print("Cleaning up range_preview: %s" % range_preview.name)
+		if is_instance_valid(range_preview):
+			range_preview.queue_free()
+		range_preview = null
+	
+	# Force cleanup of any remaining preview objects
+	force_cleanup_all_preview_objects()
+	
+	print("=== TOWER PLACEMENT PREVIEW CLEANUP COMPLETE ===")
+
+func force_cleanup_all_preview_objects():
+	"""Force cleanup of ALL preview objects in the scene"""
+	print("=== FORCE CLEANING UP ALL PREVIEW OBJECTS ===")
+	
+	# Get UI canvas
+	var td_scene = get_parent()
+	var ui_canvas = td_scene.get_node("UI")
+	
+	# Clean up ALL preview objects in UI canvas
+	var preview_objects_to_remove = []
+	for child in ui_canvas.get_children():
+		var child_name = child.name
+		if (child_name == "TowerPlacementPreview" or
+			child_name.begins_with("TowerPlacementPreview") or
+			child_name.begins_with("RangePreview") or
+			"Preview" in child_name):
+			print("Force cleaning preview object: %s" % child_name)
+			preview_objects_to_remove.append(child)
+	
+	# Remove all identified preview objects
+	for obj in preview_objects_to_remove:
+		if is_instance_valid(obj):
+			obj.queue_free()
+	
+	print("=== FORCE CLEANUP ALL PREVIEW OBJECTS COMPLETE ===")
 
 func select_tower_at_position(screen_pos: Vector2):
 	# Get mouse position relative to the map (accounting for map offset)
