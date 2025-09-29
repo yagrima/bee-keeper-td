@@ -352,6 +352,12 @@ func cancel_placement():
 
 	placement_mode_changed.emit(false)
 	
+	# CRITICAL: Reset current_tower_type in TowerDefense
+	var td_scene = get_parent()
+	if td_scene.has_method("set_current_tower_type"):
+		td_scene.set_current_tower_type("")
+		print("Reset current_tower_type in TowerDefense")
+	
 	print("=== TOWER PLACEMENT CANCELED ===")
 
 func cleanup_preview():

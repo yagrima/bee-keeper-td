@@ -2162,8 +2162,17 @@ func start_normal_tower_placement(tower_type: String, tower_name: String):
 		print("Calling tower_placer.start_tower_placement(%s)" % tower_type)
 		tower_placer.start_tower_placement(tower_type)
 		print("Normal tower placement started for: %s" % tower_name)
+		
+		# CRITICAL: Set the current tower type for toggle behavior
+		current_tower_type = tower_type
+		print("Set current_tower_type to: %s" % current_tower_type)
 	else:
 		print("ERROR: tower_placer is null!")
+
+func set_current_tower_type(tower_type: String):
+	"""Set the current tower type for toggle behavior"""
+	print("Setting current_tower_type to: %s" % tower_type)
+	current_tower_type = tower_type
 
 func cleanup_mouse_following_system():
 	"""Clean up any existing mouse following system"""
