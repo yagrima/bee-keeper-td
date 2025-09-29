@@ -1982,6 +1982,15 @@ func place_picked_up_tower(position: Vector2):
 	# Make tower visible
 	picked_up_tower.visible = true
 	
+	# Move tower from UI canvas to main scene for proper placement
+	var ui_canvas = $UI
+	if picked_up_tower.get_parent() == ui_canvas:
+		ui_canvas.remove_child(picked_up_tower)
+		add_child(picked_up_tower)
+		# Reset z_index for main scene placement
+		picked_up_tower.z_index = 0
+		print("Moved tower from UI canvas to main scene for placement")
+	
 	# Remove metaprogression tower metadata
 	picked_up_tower.remove_meta("is_metaprogression_tower")
 	picked_up_tower.remove_meta("field_number")
@@ -2112,8 +2121,17 @@ func handle_tower_hotkey(tower_type: String, tower_name: String):
 	print("=== HANDLING TOWER HOTKEY ===")
 	print("Tower type: %s, Tower name: %s" % [tower_type, tower_name])
 	
-	# Clean up any existing mouse following system
-	cleanup_mouse_following_system()
+	# Check if we're already holding a tower (mouse following mode)
+	if picked_up_tower != null:
+		print("Already holding a tower, trying to place it")
+		# Try to place the picked up tower at mouse position
+		var mouse_pos = get_global_mouse_position()
+		if try_place_picked_up_tower(mouse_pos):
+			print("Tower placed successfully via hotkey")
+		else:
+			print("Failed to place tower, returning to original position")
+			return_picked_up_tower()
+		return
 	
 	# Check if we're already in placement mode for this tower type
 	if is_in_tower_placement and current_tower_type == tower_type:
