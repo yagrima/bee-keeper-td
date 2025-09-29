@@ -1976,12 +1976,6 @@ func place_picked_up_tower(position: Vector2):
 	
 	print("Original position: %s, Grid position: %s, Aligned position: %s" % [position, grid_pos, aligned_position])
 	
-	# Set tower position to aligned grid position
-	picked_up_tower.position = aligned_position
-	
-	# Make tower visible
-	picked_up_tower.visible = true
-	
 	# Move tower from UI canvas to main scene for proper placement
 	var ui_canvas = $UI
 	if picked_up_tower.get_parent() == ui_canvas:
@@ -1991,6 +1985,19 @@ func place_picked_up_tower(position: Vector2):
 		picked_up_tower.z_index = 0
 		print("Moved tower from UI canvas to main scene for placement")
 	
+	# Set tower position to aligned grid position AFTER moving to main scene
+	picked_up_tower.global_position = aligned_position
+	
+	# Make tower visible
+	picked_up_tower.visible = true
+	
+	print("Tower positioned at: %s (aligned from %s)" % [picked_up_tower.global_position, position])
+	
+	# Verify tower is properly positioned
+	print("Tower final position: %s" % picked_up_tower.global_position)
+	print("Tower parent: %s" % picked_up_tower.get_parent().name)
+	print("Tower visible: %s" % picked_up_tower.visible)
+	
 	# Remove metaprogression tower metadata
 	picked_up_tower.remove_meta("is_metaprogression_tower")
 	picked_up_tower.remove_meta("field_number")
@@ -1998,6 +2005,9 @@ func place_picked_up_tower(position: Vector2):
 	# Add to tower placer
 	if tower_placer:
 		tower_placer.placed_towers.append(picked_up_tower)
+		print("Tower added to tower_placer.placed_towers")
+	else:
+		print("WARNING: tower_placer is null!")
 	
 	# Remove from metaprogression towers
 	metaprogression_towers.erase(picked_up_tower)
@@ -2221,6 +2231,10 @@ func create_unified_tower(tower_name: String, position: Vector2) -> Tower:
 	tower.name = "UnifiedTower_" + tower_type
 	tower.tower_name = tower_name
 	
+	# Initialize tower properties
+	if tower.has_method("_ready"):
+		tower._ready()
+	
 	# Add to UI canvas instead of main scene for better visibility
 	var ui_canvas = $UI
 	ui_canvas.add_child(tower)
@@ -2232,6 +2246,7 @@ func create_unified_tower(tower_name: String, position: Vector2) -> Tower:
 	tower.z_index = 100
 	
 	print("Tower added to UI canvas with z_index: %d" % tower.z_index)
+	print("Tower initialized: %s" % tower.tower_name)
 	
 	print("Unified tower created: %s at %s with z_index: %d" % [tower_name, tower.global_position, tower.z_index])
 	
