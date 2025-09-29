@@ -3,6 +3,7 @@ extends Control
 @onready var play_button = $UI/MenuContainer/PlayButton
 @onready var td_button = $UI/MenuContainer/TDButton
 @onready var settlement_button = $UI/MenuContainer/SettlementButton
+@onready var logout_button = $UI/MenuContainer/LogoutButton
 @onready var quit_button = $UI/MenuContainer/QuitButton
 
 # =============================================================================
@@ -64,9 +65,14 @@ func _ready():
 		td_button.pressed.connect(_on_td_pressed)
 	if settlement_button:
 		settlement_button.pressed.connect(_on_settlement_pressed)
+	if logout_button:
+		logout_button.pressed.connect(_on_logout_pressed)
 	if quit_button:
 		quit_button.pressed.connect(_on_quit_pressed)
-	
+
+	# Check authentication status
+	_check_auth_status()
+
 	# Initialize test reminder system
 	initialize_test_reminder_system()
 
@@ -84,8 +90,23 @@ func _on_settlement_pressed():
 	print("Opening Settlement (Direct Access)...")
 	SceneManager.goto_settlement()
 
+func _on_logout_pressed():
+	print("👋 Logging out...")
+	SupabaseClient.logout()
+	SceneManager.goto_auth()
+
 func _on_quit_pressed():
 	get_tree().quit()
+
+func _check_auth_status():
+	"""Check if user is authenticated, redirect to login if not"""
+	if not SupabaseClient.is_authenticated():
+		print("⚠️ User not authenticated, redirecting to login...")
+		SceneManager.goto_auth()
+		return
+
+	var user_id = SupabaseClient.get_current_user_id()
+	print("✅ Authenticated user: %s" % user_id)
 
 # =============================================================================
 # TEST REMINDER SYSTEM FUNCTIONS

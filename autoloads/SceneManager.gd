@@ -22,6 +22,10 @@ func _deferred_goto_scene(path: String):
 	else:
 		print("Failed to load scene: ", path)
 
+func goto_auth():
+	"""Go to authentication screen"""
+	goto_scene("res://scenes/auth/AuthScreen.tscn")
+
 func goto_main_menu():
 	GameManager.change_game_state(GameManager.GameState.MAIN_MENU)
 	goto_scene("res://scenes/main/Main.tscn")
