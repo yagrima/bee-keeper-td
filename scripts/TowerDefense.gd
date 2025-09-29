@@ -438,15 +438,6 @@ func _input(event):
 	elif HotkeyManager.is_hotkey_pressed(event, "start_wave"):
 		# Start wave
 		_on_start_wave_pressed()
-	elif event.keycode == KEY_T and event.pressed:
-		# Test tower positioning system
-		test_tower_positioning()
-	elif event.keycode == KEY_Y and event.pressed:
-		# Test tower menu toggle system
-		test_tower_menu_toggle()
-	elif event.keycode == KEY_U and event.pressed:
-		# Test ephemeral tower prevention
-		test_ephemeral_tower_prevention()
 	elif HotkeyManager.is_hotkey_pressed(event, "save_game"):
 		# Save game
 		_on_save_game_pressed()
