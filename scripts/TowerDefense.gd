@@ -2070,6 +2070,9 @@ func create_tower_at_position(tower_name: String, position: Vector2) -> Tower:
 	var ui_canvas = $UI
 	ui_canvas.add_child(tower)
 	
+	# Force position update after adding to scene
+	tower.global_position = position
+	
 	print("Tower added to UI canvas at: %s" % tower.global_position)
 	
 	return tower
@@ -2180,6 +2183,11 @@ func start_tower_following_mouse():
 	if picked_up_tower == null:
 		return
 	
+	# Set initial position to mouse position immediately
+	var mouse_pos = get_global_mouse_position()
+	picked_up_tower.global_position = mouse_pos
+	print("Set initial tower position to mouse: %s" % mouse_pos)
+	
 	# Connect to the _process function to update position
 	set_process(true)
 	print("Started tower following mouse")
@@ -2243,13 +2251,17 @@ func show_tower_range_at_mouse_position(tower: Tower):
 	var range_circle = create_round_range_indicator(tower.range)
 	range_indicator.add_child(range_circle)
 	
-	# Position at mouse position
-	range_indicator.global_position = get_global_mouse_position()
+	# Position at mouse position immediately
+	var mouse_pos = get_global_mouse_position()
+	range_indicator.global_position = mouse_pos
 	range_indicator.z_index = 5  # Ensure visibility
 	
 	# Add to scene
 	var ui_canvas = $UI
 	ui_canvas.add_child(range_indicator)
+	
+	# Force position update after adding to scene
+	range_indicator.global_position = mouse_pos
 	
 	print("Range indicator created: ", range_indicator.name, " at mouse position: ", range_indicator.global_position, " with range: ", tower.range)
 	print("=== RANGE INDICATOR SETUP COMPLETE ===")
