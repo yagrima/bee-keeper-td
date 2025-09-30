@@ -87,7 +87,7 @@ func save_game(save_name: String = "main") -> bool:
 
 func load_game(save_name: String = "main") -> bool:
 	"""Load a saved game using SaveManager"""
-	return SaveManager.load_game(save_name)
+	return await SaveManager.load_game(save_name)
 
 func get_save_files() -> Array[String]:
 	"""Get list of available save files"""
