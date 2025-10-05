@@ -52,6 +52,9 @@ func _ready():
 	register_password.text_submitted.connect(_on_register_field_submitted)
 	register_password_confirm.text_submitted.connect(_on_register_field_submitted)
 
+	# Enable password manager support for web builds
+	_enable_password_manager_support()
+
 	# Clear error labels
 	login_error.text = ""
 	register_error.text = ""
@@ -63,6 +66,49 @@ func _ready():
 	if SupabaseClient.is_authenticated():
 		print("✅ User already authenticated, going to main menu")
 		SceneManager.goto_main_menu()
+
+func _enable_password_manager_support():
+	"""Enable password manager autocomplete for web builds"""
+	if OS.has_feature("web"):
+		# Set autocomplete attributes via JavaScript for password managers
+		var js_code = """
+		// Wait for canvas to be ready
+		setTimeout(() => {
+			// Find all input elements in the canvas
+			const inputs = document.querySelectorAll('input');
+			inputs.forEach((input, index) => {
+				// Set form attributes for password manager
+				if (input.type === 'text' && index === 0) {
+					// Login email
+					input.setAttribute('autocomplete', 'username email');
+					input.setAttribute('name', 'email');
+				} else if (input.type === 'password' && index === 0) {
+					// Login password
+					input.setAttribute('autocomplete', 'current-password');
+					input.setAttribute('name', 'password');
+				} else if (input.type === 'text' && index === 1) {
+					// Register username
+					input.setAttribute('autocomplete', 'username');
+					input.setAttribute('name', 'username');
+				} else if (input.type === 'text' && index === 2) {
+					// Register email
+					input.setAttribute('autocomplete', 'email');
+					input.setAttribute('name', 'email');
+				} else if (input.type === 'password' && index === 1) {
+					// Register password
+					input.setAttribute('autocomplete', 'new-password');
+					input.setAttribute('name', 'new-password');
+				} else if (input.type === 'password' && index === 2) {
+					// Register password confirm
+					input.setAttribute('autocomplete', 'new-password');
+					input.setAttribute('name', 'new-password-confirm');
+				}
+			});
+			console.log('✅ Password manager support enabled');
+		}, 500);
+		"""
+		JavaScriptBridge.eval(js_code, true)
+		print("✅ Password manager support enabled for web build")
 
 # ============================================
 # LOGIN HANDLING
