@@ -35,7 +35,7 @@ theme_override_constants/separation = 20
 [node name="Title" type="Label" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 48
-text = "🐝 BeeKeeperTD"
+text = "BeeKeeperTD"
 horizontal_alignment = 1
 
 [node name="Subtitle" type="Label" parent="CenterContainer/VBoxContainer"]
@@ -89,7 +89,7 @@ size_flags_vertical = 3
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
-text = "🔐 Login"
+text = "Login"
 
 [node name="ErrorLabel" type="Label" parent="CenterContainer/VBoxContainer/TabContainer/Login"]
 layout_mode = 2
@@ -166,7 +166,7 @@ size_flags_vertical = 3
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
-text = "📝 Register"
+text = "Register"
 
 [node name="ErrorLabel" type="Label" parent="CenterContainer/VBoxContainer/TabContainer/Register"]
 layout_mode = 2
@@ -198,7 +198,7 @@ theme_override_constants/separation = 20
 [node name="Label" type="Label" parent="LoadingPanel/LoadingContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
-text = "🔄 Authenticating..."
+text = "Authenticating..."
 horizontal_alignment = 1
 
 [node name="ProgressBar" type="ProgressBar" parent="LoadingPanel/LoadingContainer/VBoxContainer"]

@@ -44,6 +44,14 @@ func _ready():
 	SupabaseClient.auth_completed.connect(_on_auth_completed)
 	SupabaseClient.auth_error.connect(_on_auth_error)
 
+	# Connect Enter key for inputs
+	login_email.text_submitted.connect(_on_login_email_submitted)
+	login_password.text_submitted.connect(_on_login_password_submitted)
+	register_username.text_submitted.connect(_on_register_field_submitted)
+	register_email.text_submitted.connect(_on_register_field_submitted)
+	register_password.text_submitted.connect(_on_register_field_submitted)
+	register_password_confirm.text_submitted.connect(_on_register_field_submitted)
+
 	# Clear error labels
 	login_error.text = ""
 	register_error.text = ""
@@ -86,6 +94,14 @@ func _on_login_pressed():
 
 func _on_login_show_password_toggled(toggled: bool):
 	login_password.secret = not toggled
+
+func _on_login_email_submitted(_text: String):
+	"""Handle Enter key in email field - move to password"""
+	login_password.grab_focus()
+
+func _on_login_password_submitted(_text: String):
+	"""Handle Enter key in password field - submit login"""
+	_on_login_pressed()
 
 # ============================================
 # REGISTER HANDLING
@@ -134,6 +150,19 @@ func _on_register_pressed():
 func _on_register_show_password_toggled(toggled: bool):
 	register_password.secret = not toggled
 	register_password_confirm.secret = not toggled
+
+func _on_register_field_submitted(_text: String):
+	"""Handle Enter key in register fields - try to submit or move to next field"""
+	# Check which field has focus and move to next, or submit if on last field
+	if register_username.has_focus():
+		register_email.grab_focus()
+	elif register_email.has_focus():
+		register_password.grab_focus()
+	elif register_password.has_focus():
+		register_password_confirm.grab_focus()
+	elif register_password_confirm.has_focus():
+		# Last field - attempt to submit
+		_on_register_pressed()
 
 func _on_password_changed(new_text: String):
 	"""Update password strength indicator in real-time"""
@@ -255,9 +284,47 @@ func _on_auth_error(error_message: String):
 
 	print("❌ Authentication error: %s" % error_message)
 
+	# Parse and improve error message
+	var user_friendly_error = _parse_error_message(error_message)
+
 	# Show error in both tabs (user might switch tabs)
-	login_error.text = error_message
-	register_error.text = error_message
+	login_error.text = user_friendly_error
+	register_error.text = user_friendly_error
+
+func _parse_error_message(error: String) -> String:
+	"""Convert technical error messages to user-friendly ones"""
+	var lower_error = error.to_lower()
+
+	# Email already exists
+	if "already" in lower_error or "exists" in lower_error or "duplicate" in lower_error:
+		return "❌ This email address is already registered. Please use a different email or try logging in."
+
+	# Invalid email format
+	if "invalid" in lower_error and "email" in lower_error:
+		return "❌ Invalid email format. Please enter a valid email address."
+
+	# Password too weak
+	if "password" in lower_error and ("weak" in lower_error or "short" in lower_error or "length" in lower_error):
+		return "❌ Password too weak. Please use at least 14 characters with uppercase, lowercase, numbers, and special characters."
+
+	# Invalid credentials (wrong password)
+	if "invalid" in lower_error and ("credential" in lower_error or "password" in lower_error):
+		return "❌ Invalid email or password. Please check your credentials and try again."
+
+	# User not found
+	if "not found" in lower_error or "user" in lower_error and "exist" in lower_error:
+		return "❌ No account found with this email. Please register first."
+
+	# Network errors
+	if "network" in lower_error or "connection" in lower_error or "timeout" in lower_error:
+		return "❌ Network error. Please check your internet connection and try again."
+
+	# Rate limiting
+	if "rate" in lower_error or "too many" in lower_error:
+		return "❌ Too many attempts. Please wait a moment and try again."
+
+	# Generic fallback with original error
+	return "❌ " + error
 
 # ============================================
 # UI HELPERS

@@ -545,14 +545,22 @@ func upload_to_supabase(data: Dictionary) -> bool:
 		"Content-Type: application/json",
 		"apikey: " + SupabaseClient.SUPABASE_ANON_KEY,
 		"Authorization: Bearer " + _get_access_token(),
-		"Prefer: resolution=merge-duplicates"
+		"Prefer: resolution=merge-duplicates,return=representation"
 	]
 
-	var body = JSON.stringify({
+	var payload = {
 		"user_id": user_id,
 		"data": data,
-		"version": 1
-	})
+		"version": 1,
+		"updated_at": Time.get_datetime_string_from_system(true)
+	}
+
+	var body = JSON.stringify(payload)
+
+	print("📤 Uploading to Supabase:")
+	print("  URL: %s" % url)
+	print("  User ID: %s" % user_id)
+	print("  Payload size: %d bytes" % body.length())
 
 	var http = HTTPRequest.new()
 	add_child(http)
@@ -573,12 +581,22 @@ func _on_upload_completed(result: int, response_code: int, headers: PackedString
 	if http:
 		http.queue_free()
 
+	var response_text = body.get_string_from_utf8()
+	print("📥 Upload Response:")
+	print("  Result: %d" % result)
+	print("  Response Code: %d" % response_code)
+	print("  Body: %s" % response_text)
+
 	if response_code == 200 or response_code == 201:
 		print("✅ Save uploaded to cloud successfully!")
 		cloud_sync_completed.emit(true)
 	else:
-		var response_text = body.get_string_from_utf8()
-		push_error("Upload failed: %d - %s" % [response_code, response_text])
+		push_error("❌ Upload failed: %d - %s" % [response_code, response_text])
+
+		# Show user-friendly error via ErrorHandler
+		if ErrorHandler:
+			ErrorHandler.handle_http_error(response_code, response_text)
+
 		cloud_sync_completed.emit(false)
 
 func load_from_cloud() -> bool:
