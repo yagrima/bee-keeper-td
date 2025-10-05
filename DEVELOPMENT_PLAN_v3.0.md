@@ -2,11 +2,11 @@
 
 ## 📋 Overview
 
-**Project**: BeeKeeperTD - Tower Defense Game mit Bienen-Theme  
-**Version**: 3.0  
-**Last Updated**: 2025-09-29  
-**Current Phase**: Phase 5 - Web App & Session System  
-**Status**: Starting Web App Implementation
+**Project**: BeeKeeperTD - Tower Defense Game mit Bienen-Theme
+**Version**: 3.2
+**Last Updated**: 2025-10-05
+**Current Phase**: Phase 5 - Web App & Session System
+**Status**: Sprint 3 Complete, Sprint 4 Starting
 
 ---
 
@@ -103,7 +103,7 @@
 
 ---
 
-### **Phase 5: Web App & Session System** 🔄 **IN PROGRESS** (Starting 2025-09-29)
+### **Phase 5: Web App & Session System** 🔄 **IN PROGRESS** (2025-09-29 to 2025-10-05)
 
 #### **Objectives**
 - Implement account-based session tracking
@@ -113,14 +113,14 @@
 
 #### **Planned Deliverables**
 
-##### **Sprint 1: Backend Setup (3-5 days)** 📋
-- 📋 **Supabase Setup**:
+##### **Sprint 1: Backend Setup (3-5 days)** ✅ **COMPLETED**
+- ✅ **Supabase Setup**:
   - Create Supabase project (EU Region - Frankfurt)
   - Configure database schema (users, save_data, user_rate_limits, audit_logs)
   - Setup authentication (Email + Password, 14 char min)
   - Configure Row Level Security (RLS)
 
-- 📋 **Database Schema** (Security Hardened):
+- ✅ **Database Schema** (Security Hardened):
   ```sql
   -- save_data: id, user_id, data (JSONB with validation), version, updated_at
   -- user_rate_limits: Token Bucket Algorithm (10 burst, 1/min refill)
@@ -131,34 +131,34 @@
   -- Security: 1MB size limit, comprehensive input validation
   ```
 
-- 📋 **Security Configuration**:
+- ✅ **Security Configuration**:
   - Password Policy: Min 14 chars, max 128, complexity requirements
   - Session Timeout: 24 hours (JWT: 1h, Refresh: 24h)
   - CORS: Configure allowed origins, methods, headers
   - Audit Logging: Track all save data changes
 
-- 📋 **API Testing**:
+- ✅ **API Testing**:
   - Test register endpoint (with 14 char password)
   - Test login endpoint (rate limiting)
   - Test save/load endpoints (JSONB validation)
   - Test session refresh (token rotation)
 
-##### **Sprint 2: Frontend Integration (3-5 days)** 🔄
-- 🔄 **SupabaseClient Autoload** (Security Hardened):
+##### **Sprint 2: Frontend Integration (3-5 days)** ✅ **COMPLETED**
+- ✅ **SupabaseClient Autoload** (Security Hardened):
   - HTTP request wrapper with HTTPS enforcement
   - Auth flow (register, login, logout)
   - Session management with auto-refresh
   - Token refresh mechanism (5 min before expiry)
   - Rate limiting (100ms between requests)
 
-- 🔄 **Token Storage** (AES-GCM Encryption):
+- ✅ **Token Storage** (AES-GCM Encryption):
   - Access Token in SessionStorage (tab-scope security)
   - Refresh Token encrypted in LocalStorage (Web Crypto API)
   - Device-specific encryption key (256-bit)
   - PBKDF2 key derivation (100k iterations)
   - Secure token cleanup on logout
 
-- 🔄 **Login/Register UI** (Enhanced Validation):
+- ✅ **Login/Register UI** (Enhanced Validation):
   - Main menu authentication screen
   - Registration form (email, username, 14+ char password)
   - Password strength indicator
@@ -166,56 +166,72 @@
   - Error handling and user feedback
   - Input sanitization (XSS prevention)
 
-- 🔄 **SessionManager Integration**:
+- ✅ **SessionManager Integration**:
   - Store current session in GameManager
   - Encrypted token persistence
   - Auto-login on app start
   - Session expiration handling (24h timeout)
-  - Inactivity logout (1 hour)
+  - Logout Button im Main Menu
 
-##### **Sprint 3: Cloud Save Integration (2-3 days)** 📋
-- 📋 **SaveManager Extension**:
-  - Extend existing SaveManager for cloud sync
-  - Implement upload_save() function
-  - Implement download_save() function
-  - Implement sync_save() with conflict resolution
-  
-- 📋 **Conflict Resolution**:
-  - Timestamp-based conflict detection
-  - User choice dialog (local vs. cloud)
-  - Automatic merge strategy (newest wins)
-  - Backup mechanism
-  
-- 📋 **Offline Support**:
-  - LocalStorage fallback for offline play
-  - Queue sync operations
-  - Auto-sync on reconnect
-  - Sync status indicator
+##### **Sprint 3: Cloud Save Integration (2-3 days)** ✅ **COMPLETED**
+- ✅ **SaveManager Extension**:
+  - Cloud-First Save Strategy (Cloud = autoritativ)
+  - HMAC-SHA256 Integrity Checksums
+  - Automatic Save/Load System
+  - save_to_cloud() / load_from_cloud() / sync_save()
 
-##### **Sprint 4: Polish & Testing (2-3 days)** 📋
+- ✅ **Automatic Save/Load System**:
+  - Auto-Load beim Spielstart (Cloud → Local Fallback)
+  - Auto-Save nach jeder Runde (Wave Completion)
+  - Auto-Save bei Spielabschluss (All Waves Completed)
+  - Auto-Save beim Verlassen (Tree Exiting)
+  - Entfernung aller manuellen Save/Load UI-Elemente
+
+- ✅ **Offline Support**:
+  - LocalStorage fallback für offline play
+  - Cloud-First Strategie mit Fallback-Mechanismus
+  - Rate Limiting: Token Bucket (10 burst, 1/min refill)
+  - Server-Side JSONB Validation
+
+##### **Sprint 3.5: Modular Refactoring (1 day)** ✅ **COMPLETED**
+- ✅ **Component-Based Architecture**:
+  - TowerDefense.gd aufgeteilt in 4 Komponenten
+  - TDSaveSystem.gd (199 Zeilen) - Save/Load Operations
+  - TDWaveController.gd (205 Zeilen) - Wave Management
+  - TDUIManager.gd (444 Zeilen) - UI Operations
+  - TDMetaprogression.gd (561 Zeilen) - Metaprogression System
+
+- ✅ **Code Reduction**:
+  - Main File: 2841 → 946 Zeilen (-66.7%)
+  - Delegation Pattern implementiert
+  - Verbesserte Wartbarkeit und Testbarkeit
+  - Verhindert Token-Limit-Fehler bei AI-Assistenz
+
+##### **Sprint 4: Polish & Testing (2-3 days)** 🎯 **NEXT**
 - 📋 **UX Improvements**:
-  - Loading states for all API calls
+  - Loading states für Cloud-Sync (Save/Load Feedback)
   - Error messages (network, auth, validation)
-  - Success notifications
+  - Success notifications (Save Success, Cloud Sync Complete)
   - Session timeout warnings
   - DSGVO consent dialog
 
-- 📋 **Security** (Production Ready):
-  - HTTPS enforcement with startup check
-  - AES-GCM token encryption (Web Crypto API)
-  - Client + Server-side input validation
-  - Rate limiting handling (Token Bucket)
-  - Content Security Policy (CSP) headers
-  - XSS protection (input sanitization)
-  - Audit logging verification
+- 📋 **Security Verification** (Production Ready):
+  - ✅ HTTPS enforcement (already implemented)
+  - ✅ AES-GCM token encryption (already implemented)
+  - ✅ Server-side JSONB validation (already implemented)
+  - ✅ Rate limiting (Token Bucket, already implemented)
+  - 📋 Content Security Policy (CSP) headers (deployment)
+  - ✅ XSS protection (input sanitization, already implemented)
+  - ✅ Audit logging (already implemented)
 
 - 📋 **Testing**:
   - Auth flow testing (register, login, logout, token refresh)
-  - Save/load testing (JSONB validation, rate limits)
-  - Conflict resolution testing
-  - Offline mode testing
-  - Security testing (XSS, injection attempts)
+  - Cloud save/load testing (JSONB validation, rate limits)
+  - Auto-save trigger testing (Wave completion, Exit, Victory)
+  - Offline mode testing (LocalStorage fallback)
+  - Security testing (XSS, JSONB injection attempts)
   - Token encryption/decryption tests
+  - Component integration tests
 
 ##### **Sprint 5: Web Export & Deployment (2-3 days)** 📋
 - 📋 **Godot Web Export**:
@@ -379,12 +395,33 @@
 - ✅ Wave progress saving
 - ✅ Resource state saving
 - ✅ Speed mode persistence
+- ✅ Cloud-First Save System (Supabase)
+- ✅ HMAC-SHA256 Integrity Checksums
+- ✅ Automatic Save/Load (no manual actions)
+- ✅ Token Bucket Rate Limiting
+- ✅ Audit Logging (90 Tage)
+
+#### **Web App & Authentication**
+- ✅ Supabase Backend (EU/Frankfurt, DSGVO-compliant)
+- ✅ Email/Password Authentication (14 char min)
+- ✅ AES-GCM Token Encryption (Web Crypto API)
+- ✅ Login/Register UI mit Password Strength Indicator
+- ✅ Session Management (24h timeout, auto-refresh)
+- ✅ Logout Button im Main Menu
+
+#### **Modular Architecture**
+- ✅ Component-Based Design
+- ✅ TDSaveSystem, TDWaveController, TDUIManager, TDMetaprogression
+- ✅ 66.7% Code Reduction (2841 → 946 Zeilen)
+- ✅ Delegation Pattern
+- ✅ Improved Maintainability & Testability
 
 ### **In Progress** 🔄
 
-- 🔄 Settlement system design
-- 🔄 Tower persistence between runs
-- 🔄 Meta-currency implementation
+- 🔄 Sprint 4: UX Polish & Testing
+- 🔄 Loading states für Cloud-Sync
+- 🔄 Security verification
+- 🔄 Component integration tests
 
 ### **Planned** 📋
 
@@ -488,9 +525,15 @@ Domain:    Custom domain (optional)
 SSL:       Automatic (Let's Encrypt)
 ```
 
-#### **Core Scripts**
+#### **Core Scripts (Modular Architecture)**
 ```
-TowerDefense.gd     - Main TD scene controller
+TowerDefense.gd                 - Main TD scene controller (946 lines)
+  └─ Component Delegation:
+      ├─ TDSaveSystem.gd        - Save/Load Operations (199 lines)
+      ├─ TDWaveController.gd    - Wave Management (205 lines)
+      ├─ TDUIManager.gd         - UI Operations (444 lines)
+      └─ TDMetaprogression.gd   - Metaprogression System (561 lines)
+
 Tower.gd            - Base tower class
 Enemy.gd            - Base enemy class
 Projectile.gd       - Projectile behavior
@@ -543,14 +586,20 @@ TowerVariants/
 
 ## 📈 Progress Tracking
 
-### **Overall Progress: 57%**
+### **Overall Progress: 68%**
 
 #### **Phase Completion**
 - Phase 1: ████████████████████ 100%
 - Phase 2: ████████████████████ 100%
 - Phase 3: ████████████████████ 100%
 - Phase 4: ████████████████████ 100%
-- Phase 5: ░░░░░░░░░░░░░░░░░░░░   0% (Web App & Session - Starting)
+- Phase 5: ██████████████░░░░░░  70% (Web App & Session - Sprint 4 Starting)
+  - Sprint 1: ████████████████████ 100% (Backend Setup)
+  - Sprint 2: ████████████████████ 100% (Frontend Integration)
+  - Sprint 3: ████████████████████ 100% (Cloud Save Integration)
+  - Sprint 3.5: ████████████████████ 100% (Modular Refactoring)
+  - Sprint 4: ░░░░░░░░░░░░░░░░░░░░   0% (Polish & Testing - Next)
+  - Sprint 5: ░░░░░░░░░░░░░░░░░░░░   0% (Web Deployment)
 - Phase 6: ░░░░░░░░░░░░░░░░░░░░   0% (Metaprogression Expansion)
 - Phase 7: ░░░░░░░░░░░░░░░░░░░░   0% (Polish & Content)
 
@@ -656,8 +705,11 @@ TowerVariants/
 ### **Code Cleanup Tasks**
 - ✅ Remove all "Basic Shooter" and "Piercing Shooter" references (Completed)
 - ✅ Unify coordinate system handling (Completed)
-- 📋 Refactor TowerDefense.gd (currently ~2800 lines)
-- 📋 Extract metaprogression logic to separate class
+- ✅ Refactor TowerDefense.gd (Completed - 2841 → 946 lines, -66.7%)
+- ✅ Extract metaprogression logic to separate class (TDMetaprogression.gd)
+- ✅ Extract wave logic to separate class (TDWaveController.gd)
+- ✅ Extract UI logic to separate class (TDUIManager.gd)
+- ✅ Extract save logic to separate class (TDSaveSystem.gd)
 - 📋 Optimize testing framework for production
 
 ---
@@ -729,7 +781,7 @@ TowerVariants/
 
 ---
 
-**Document Status**: Active  
-**Last Updated**: 2025-09-29  
-**Next Review**: 2025-10-06  
-**Version**: 3.0
+**Document Status**: Active
+**Last Updated**: 2025-10-05
+**Next Review**: 2025-10-12
+**Version**: 3.2

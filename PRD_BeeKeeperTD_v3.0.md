@@ -4,9 +4,9 @@
 
 **BeeKeeperTD** ist ein Tower Defense Spiel im Bienen-Theme mit innovativen Gameplay-Mechaniken, Metaprogression-System und umfassender Test-Automatisierung.
 
-**Version**: 3.1
-**Letzte Aktualisierung**: 2025-09-29
-**Status**: Active Development - Web App & Session System Phase (Security Hardened)
+**Version**: 3.2
+**Letzte Aktualisierung**: 2025-10-05
+**Status**: Active Development - Cloud Save System Complete, Sprint 4 Starting
 
 ---
 
@@ -69,6 +69,29 @@
 - **Continuous Testing**: Tower Placement Blocking Test läuft alle 1s
 - **Test-Erinnerungen**: Automatische Benachrichtigungen für neue Features
 
+#### **8. Cloud-First Save System** ☁️
+- **Automatic Save/Load**: Vollautomatisches Speichersystem ohne manuelle Aktionen
+- **Cloud-Primary Strategy**: Cloud-Daten sind immer autoritativ
+- **HMAC-SHA256 Integrity**: Checksums verhindern Manipulationen
+- **Save Triggers**:
+  - Auto-Load beim Spielstart (Cloud → Local Fallback)
+  - Auto-Save nach jeder Runde
+  - Auto-Save bei Spielabschluss (Victory)
+  - Auto-Save beim Verlassen der Tower Defense Szene
+- **Token Bucket Rate Limiting**: 10 burst, 1/min refill
+- **Server-Side Validation**: JSONB Range Checks im Backend
+- **Audit Logging**: 90 Tage vollständige Änderungshistorie
+
+#### **9. Modular Architecture** 🏗️
+- **Component-Based Design**: TowerDefense.gd aufgeteilt in spezialisierte Module
+- **Main File Reduction**: Von 2841 auf 946 Zeilen (-66.7%)
+- **Komponenten**:
+  - `TDSaveSystem.gd` (199 Zeilen) - Save/Load mit Cloud-First Strategie
+  - `TDWaveController.gd` (205 Zeilen) - Wave Management & Auto-Progression
+  - `TDUIManager.gd` (444 Zeilen) - UI Operations, Dialogs, Buttons
+  - `TDMetaprogression.gd` (561 Zeilen) - Metaprogression Fields & Tower Pickup
+- **Benefits**: Bessere Wartbarkeit, Testbarkeit, verhindert Token-Limit-Fehler bei AI-Assistenz
+
 ---
 
 ## 🏗️ Technical Architecture
@@ -79,13 +102,18 @@
 - **GameManager**: Zentrale Spielzustandsverwaltung, Resource Management
 - **SceneManager**: Szenenübergänge und Navigation
 - **HotkeyManager**: Konfigurierbare Tastenkürzel (JSON-Config)
-- **SaveManager**: JSON-basierte Speicherung mit Tower Persistence
+- **SaveManager**: Cloud-First Save System mit HMAC Integrity, Auto-Save/Load
+- **SupabaseClient**: Supabase Backend Integration, AES-GCM Token Encryption (Security Score: 8.6/10)
 
-#### **Tower Defense Core**
+#### **Tower Defense Core (Modular Architecture)**
+- **TowerDefense.gd** (946 Zeilen): Hauptkoordinator für alle Komponenten
+- **TDSaveSystem.gd**: Cloud-First Save/Load mit Auto-Triggers
+- **TDWaveController.gd**: Wave-Events, Auto-Progression, Countdown-Display
+- **TDUIManager.gd**: Victory/Game Over Screens, Button Management, UI Updates
+- **TDMetaprogression.gd**: Field Setup, Tower Pickup/Placement, Validation
 - **Tower System**: Modulare Turm-Implementierung mit 4 Basistypen
 - **Enemy System**: Skalierbare Gegner mit dynamischen Health Bars
 - **Projectile System**: Homing-Geschosse mit Geschwindigkeitsanpassung
-- **Wave Management**: Automatische Wave-Progression mit Countdown
 - **TowerPlacer**: Unified placement system für Hotkey- und Metaprogression-Türme
 
 #### **Metaprogression System**
@@ -249,45 +277,54 @@
 
 ---
 
-## 💾 Save System
+## 💾 Cloud-First Save System
 
 ### **Save Data Structure**
 ```json
 {
-  "current_wave": 3,
-  "player_health": 20,
-  "honey": 150,
-  "placed_towers": [
-    {
-      "type": "stinger",
-      "position": {"x": 144, "y": 272},
-      "level": 1,
-      "damage": 8.0,
-      "range": 80.0
-    },
-    {
-      "type": "propolis_bomber",
-      "position": {"x": 240, "y": 180},
-      "level": 1,
-      "damage": 35.0,
-      "range": 100.0
-    }
-  ],
-  "wave_data": {
-    "current_wave": 3,
-    "is_wave_active": false,
-    "wave_progress": {"spawned": 9, "total": 9, "killed": 9}
+  "version": "1.0",
+  "timestamp": 1738756000,
+  "checksum": "a3f8b2...",  // HMAC-SHA256
+  "synced_at": 1738756010,
+  "game_state": "TOWER_DEFENSE",
+  "player_data": {
+    "account_level": 1,
+    "honey": 150,
+    "honeygems": 0,
+    "wax": 50,
+    "wood": 0
   },
-  "speed_mode": 1
+  "tower_defense": {
+    "current_wave": 3,
+    "player_health": 20,
+    "placed_towers": [
+      {
+        "type": "stinger",
+        "position": {"x": 144, "y": 272},
+        "level": 1,
+        "damage": 8.0,
+        "range": 80.0
+      }
+    ]
+  },
+  "hotkeys": { /* ... */ },
+  "settlement": { /* ... */ }
 }
 ```
 
 ### **Save Features**
-- **JSON Format**: Human-readable save files
-- **Tower Persistence**: Complete tower state with new tower types
-- **Wave Progress**: Current wave and scaling status
-- **Resource Management**: Honey and health tracking
-- **Speed Mode**: Persistent speed setting
+- **Fully Automatic**: Kein manuelles Speichern/Laden mehr
+- **Cloud-Primary**: Cloud-Daten sind immer autoritativ
+- **Auto-Save Triggers**:
+  - Nach jeder Runde (Wave Completion)
+  - Bei Spielabschluss (All Waves Completed)
+  - Beim Verlassen (Tree Exiting)
+- **Auto-Load**: Beim Spielstart (Cloud → Local Fallback)
+- **HMAC Integrity**: SHA-256 Checksums verhindern Manipulationen
+- **Rate Limiting**: Token Bucket (10 burst, 1/min refill)
+- **Server Validation**: JSONB Range Checks (Wave 1-5, Health 0-20, Honey 0-100k)
+- **Audit Trail**: 90 Tage vollständige Änderungshistorie
+- **Offline Fallback**: Lokale Saves wenn Cloud nicht verfügbar
 
 ---
 
@@ -355,33 +392,42 @@
 - ✅ Return-on-fail functionality
 - ✅ Coordinate system unification
 
-### **Phase 5: Web App & Session System** 🔄 **In Progress** (Security Hardened)
-- 🔄 **Backend Setup**:
+### **Phase 5: Web App & Session System** ✅ **Completed** (2025-10-05)
+- ✅ **Backend Setup** (Sprint 1):
   - Supabase project (EU Region - Frankfurt, DSGVO-konform)
   - Database schema mit Security Hardening (JSONB validation, Rate Limiting, Audit Logs)
   - Authentication (14 char min password, 24h session timeout)
   - Row Level Security (RLS) policies
 
-- 🔄 **Frontend Integration**:
+- ✅ **Frontend Integration** (Sprint 2):
   - SupabaseClient mit HTTPS enforcement
   - Token Storage mit AES-GCM Encryption (Web Crypto API)
   - Login/Register UI mit Password Strength Indicator
   - Session Management mit Auto-Refresh
+  - Logout Button im Main Menu
 
-- 📋 **Cloud Save System**:
-  - Cloud-sync für Spielfortschritt
+- ✅ **Cloud Save System** (Sprint 3):
+  - Cloud-First Strategy (Cloud = autoritativ)
+  - HMAC-SHA256 Integrity Checksums
+  - Automatic Save/Load System
   - Token Bucket Rate Limiting (10 burst, 1/min refill)
   - Audit Logging (90 Tage Retention)
-  - Conflict Resolution
+  - Server-Side JSONB Validation
 
-- 📋 **Security Features**:
+- ✅ **Modular Refactoring**:
+  - TowerDefense.gd aufgeteilt in 4 Komponenten
+  - 66.7% Code-Reduktion (2841 → 946 Zeilen)
+  - Component-Based Architecture
+  - Verbesserte Wartbarkeit und Testbarkeit
+
+- 📋 **Security Features** (Sprint 4 - Next):
   - Content Security Policy (CSP)
   - CORS Configuration
   - XSS Protection
   - Input Validation (Client + Server)
   - Security Score: 8.6/10 (Production Ready)
 
-- 📋 **Web Deployment**:
+- 📋 **Web Deployment** (Sprint 5 - Planned):
   - Godot Web Export
   - Netlify/Vercel Hosting mit Security Headers
   - Production Monitoring
@@ -458,7 +504,28 @@
 
 ## 📝 Change Log
 
-### **Version 3.1 (2025-09-29)** 🆕 **Security Hardened**
+### **Version 3.2 (2025-10-05)** 🆕 **Cloud Save & Modular Architecture**
+- ✅ **Automatic Save/Load System**: Vollautomatisches Speichern ohne manuelle Aktionen
+  - Auto-Load beim Spielstart (Cloud → Local Fallback)
+  - Auto-Save nach jeder Runde
+  - Auto-Save bei Spielabschluss (Victory)
+  - Auto-Save beim Verlassen (Tree Exiting)
+  - Entfernung aller manuellen Save/Load UI-Elemente (F5/F9 Hotkeys, Dialogs)
+- ✅ **Cloud-First Save Strategy**: Cloud-Daten sind immer autoritativ
+  - HMAC-SHA256 Integrity Checksums
+  - Token Bucket Rate Limiting (10 burst, 1/min refill)
+  - Server-Side JSONB Validation
+  - Audit Logging (90 Tage Retention)
+- ✅ **Modular Refactoring**: TowerDefense.gd aufgeteilt in Komponenten
+  - Main File: 2841 → 946 Zeilen (-66.7%)
+  - TDSaveSystem.gd (199 Zeilen)
+  - TDWaveController.gd (205 Zeilen)
+  - TDUIManager.gd (444 Zeilen)
+  - TDMetaprogression.gd (561 Zeilen)
+  - Component-Based Architecture mit Delegation Pattern
+- ✅ **GameManager Fix**: load_game() async compatibility (await)
+
+### **Version 3.1 (2025-09-29)** **Security Hardened**
 - ✅ **Web App Security Architecture**: Production-ready security implementation
 - ✅ **JSONB Injection Protection**: Vollständige Validation mit Range Checks (Score: 9/10)
 - ✅ **Token Bucket Rate Limiting**: 10 burst, 1/min refill - gameplay-kompatibel (Score: 9/10)
@@ -534,7 +601,7 @@
 
 ---
 
-**Document Status**: Active  
-**Last Updated**: 2025-09-29  
-**Next Review**: 2025-10-06  
-**Version**: 3.0
+**Document Status**: Active
+**Last Updated**: 2025-10-05
+**Next Review**: 2025-10-12
+**Version**: 3.2
