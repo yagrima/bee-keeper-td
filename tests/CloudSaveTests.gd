@@ -75,7 +75,7 @@ func test_local_load_basic() -> bool:
 	# Load the save from previous test
 	var loaded_data = SaveManager.read_save_file("test_save")
 
-	if loaded_data and loaded_data.has("test_key"):
+	if loaded_data is Dictionary and loaded_data.has("test_key"):
 		if loaded_data["test_key"] == "test_value":
 			return _record_test(test_name, true, "Local load successful, data matches")
 		else:
