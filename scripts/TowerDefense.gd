@@ -204,17 +204,8 @@ func create_grid_overlay(ui_canvas: CanvasLayer, offset: Vector2, map_size: Vect
 		// Check if we're on a grid line (every 32 pixels)
 		vec2 grid_check = mod(pixel_pos, grid_size);
 
-		// Determine line width - make specific problematic lines thicker
-		float current_line_width = line_width;
-
-		// Check if we're near the problematic vertical line at x=160 (5th field boundary)
-		float distance_to_160 = abs(pixel_pos.x - 160.0);
-		if (distance_to_160 < 1.0) {
-			current_line_width = 0.55;  // Make this line barely thicker
-		}
-
-		// Simple check: if we're within current_line_width pixels of a grid boundary
-		bool on_vertical_line = grid_check.x < current_line_width || grid_check.x > (grid_size - current_line_width);
+		// Simple check: if we're within line_width pixels of a grid boundary
+		bool on_vertical_line = grid_check.x < line_width || grid_check.x > (grid_size - line_width);
 		bool on_horizontal_line = grid_check.y < line_width || grid_check.y > (grid_size - line_width);
 
 		if (on_vertical_line || on_horizontal_line) {

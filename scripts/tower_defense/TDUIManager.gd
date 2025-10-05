@@ -92,11 +92,11 @@ func show_victory_screen():
 
 	# Victory title
 	var title_label = Label.new()
-	title_label.text = "🏆 VICTORY! 🏆"
+	title_label.text = "*** VICTORY! ***"
 	title_label.position = Vector2(0, 30)
 	title_label.size = Vector2(panel_size.x, 50)
 	title_label.add_theme_font_size_override("font_size", 32)
-	title_label.add_theme_color_override("font_color", Color.WHITE)
+	title_label.add_theme_color_override("font_color", Color.GOLD)
 	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	victory_panel.add_child(title_label)
@@ -219,11 +219,11 @@ func show_game_over_screen():
 
 	# Game over title
 	var title_label = Label.new()
-	title_label.text = "💀 GAME OVER 💀"
+	title_label.text = "*** GAME OVER ***"
 	title_label.position = Vector2(0, 30)
 	title_label.size = Vector2(panel_size.x, 50)
 	title_label.add_theme_font_size_override("font_size", 32)
-	title_label.add_theme_color_override("font_color", Color.WHITE)
+	title_label.add_theme_color_override("font_color", Color.RED)
 	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	game_over_panel.add_child(title_label)
