@@ -23,6 +23,8 @@ SceneManager="*res://autoloads/SceneManager.gd"
 HotkeyManager="*res://autoloads/HotkeyManager.gd"
 SaveManager="*res://autoloads/SaveManager.gd"
 SupabaseClient="*res://autoloads/SupabaseClient.gd"
+NotificationManager="*res://autoloads/NotificationManager.gd"
+ErrorHandler="*res://autoloads/ErrorHandler.gd"
 
 [display]
 
