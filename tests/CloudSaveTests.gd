@@ -11,6 +11,33 @@ var tests_passed: int = 0
 var tests_failed: int = 0
 var test_results: Array[Dictionary] = []
 
+# Helper function for auth signal waiting (same as AuthFlowTests)
+func _await_auth_signal(timeout_sec: float = 5.0) -> Dictionary:
+	"""Wait for auth signal and return result"""
+	var success = false
+	var error_msg = ""
+	var user_data = {}
+	
+	var auth_complete = func(s: bool, data: Dictionary):
+		success = s
+		user_data = data
+	var auth_err = func(err: String):
+		error_msg = err
+	
+	SupabaseClient.auth_completed.connect(auth_complete)
+	SupabaseClient.auth_error.connect(auth_err)
+	
+	var timeout = 0
+	var max_timeout = int(timeout_sec * 10)
+	while timeout < max_timeout and not success and error_msg == "":
+		await get_tree().create_timer(0.1).timeout
+		timeout += 1
+	
+	SupabaseClient.auth_completed.disconnect(auth_complete)
+	SupabaseClient.auth_error.disconnect(auth_err)
+	
+	return {"success": success, "error": error_msg, "data": user_data}
+
 func run_all_tests():
 	"""Run all cloud save/load tests"""
 	print("\n" + "=".repeat(60))
@@ -100,10 +127,11 @@ func test_cloud_save_authenticated() -> bool:
 		# Quick login for test
 		var test_email = "cloud_save_test@example.com"
 		var test_password = "SecurePassword123!@#"
-		await SupabaseClient.login(test_email, test_password)
+		SupabaseClient.login(test_email, test_password)
+		var login_result = await _await_auth_signal()
 
-		if not SupabaseClient.is_authenticated():
-			return _record_test(test_name, false, "Could not authenticate for test")
+		if not login_result.success:
+			return _record_test(test_name, false, "Could not authenticate for test: " + login_result.error)
 
 	# Prepare test data
 	SaveManager.save_data = {
