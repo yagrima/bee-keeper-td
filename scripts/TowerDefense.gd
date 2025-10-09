@@ -272,9 +272,18 @@ func setup_wave_manager():
 	wave_manager = WaveManager.new()
 	add_child(wave_manager)
 
-	var path = path_layer.get_node_or_null("EnemyPath")
-	if path:
-		wave_manager.enemy_path = path
+	# Set spawn point and path for wave manager
+	var path_points = get_meta("path_points", [])
+	var map_offset = get_meta("map_offset", Vector2.ZERO)
+	if not path_points.is_empty():
+		var ui_spawn_point = path_points[0] + map_offset
+		var ui_path_points: Array[Vector2] = []
+		for point in path_points:
+			ui_path_points.append(point + map_offset)
+		
+		wave_manager.set_spawn_point(ui_spawn_point)
+		wave_manager.set_enemy_path(ui_path_points)
+	
 	wave_manager.wave_completed.connect(wave_controller._on_wave_completed)
 	wave_manager.enemy_reached_end.connect(_on_enemy_reached_end)
 	wave_manager.enemy_died.connect(_on_enemy_died)
@@ -291,7 +300,6 @@ func setup_tower_placer():
 	"""Set up tower placer"""
 	tower_placer = TowerPlacer.new()
 	tower_placer.build_layer = build_layer
-	tower_placer.path_layer = path_layer
 	add_child(tower_placer)
 
 	tower_placer.tower_placed.connect(_on_tower_placed)

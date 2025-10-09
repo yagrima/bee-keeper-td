@@ -218,6 +218,12 @@ func pickup_metaprogression_tower(tower: Tower):
 	metaprogression_towers.erase(picked_up_tower)
 	print("Tower temporarily removed from metaprogression_towers (count: %d)" % metaprogression_towers.size())
 
+	# DISABLE tower functionality while being carried
+	picked_up_tower.set_process(false)
+	picked_up_tower.set_physics_process(false)
+	picked_up_tower.set_meta("is_being_carried", true)
+	print("Tower functionality DISABLED (no attacks while hovering)")
+
 	# Move tower to follow mouse (keep it visible)
 	picked_up_tower.z_index = 100  # Above everything
 
@@ -400,6 +406,12 @@ func place_picked_up_tower(position: Vector2):
 	# Reset z_index for proper placement
 	picked_up_tower.z_index = 0
 
+	# RE-ENABLE tower functionality after placement
+	picked_up_tower.set_process(true)
+	picked_up_tower.set_physics_process(true)
+	picked_up_tower.remove_meta("is_being_carried")
+	print("Tower functionality RE-ENABLED (attacks now active)")
+
 	# Set tower position to aligned map position + offset (UI coordinates)
 	var aligned_ui_position = aligned_map_position + map_offset
 	picked_up_tower.global_position = aligned_ui_position
@@ -474,6 +486,12 @@ func return_picked_up_tower():
 
 	# Reset z_index
 	picked_up_tower.z_index = 0
+
+	# RE-ENABLE tower functionality (in case it gets returned to field and picked up again)
+	picked_up_tower.set_process(true)
+	picked_up_tower.set_physics_process(true)
+	picked_up_tower.remove_meta("is_being_carried")
+	print("Tower functionality RE-ENABLED (back in field)")
 
 	# Make tower visible again
 	picked_up_tower.visible = true

@@ -37,6 +37,16 @@ func _ready():
 	login_show_password.toggled.connect(_on_login_show_password_toggled)
 	register_show_password.toggled.connect(_on_register_show_password_toggled)
 
+	# Connect Enter key handling for login
+	login_email.text_submitted.connect(_on_login_email_submitted)
+	login_password.text_submitted.connect(_on_login_password_submitted)
+	
+	# Connect Enter key handling for register
+	register_username.text_submitted.connect(_on_register_username_submitted)
+	register_email.text_submitted.connect(_on_register_email_submitted)
+	register_password.text_submitted.connect(_on_register_password_submitted)
+	register_password_confirm.text_submitted.connect(_on_register_password_confirm_submitted)
+
 	# Connect password strength indicator
 	register_password.text_changed.connect(_on_password_changed)
 
@@ -87,6 +97,18 @@ func _on_login_pressed():
 func _on_login_show_password_toggled(toggled: bool):
 	login_password.secret = not toggled
 
+func _on_login_email_submitted(_text: String):
+	"""When Enter is pressed in email field, move to password field"""
+	login_password.grab_focus()
+
+func _on_login_password_submitted(_text: String):
+	"""When Enter is pressed in password field, trigger login if fields are filled"""
+	var email = login_email.text.strip_edges()
+	var password = login_password.text
+	
+	if not email.is_empty() and not password.is_empty():
+		_on_login_pressed()
+
 # ============================================
 # REGISTER HANDLING
 # ============================================
@@ -134,6 +156,28 @@ func _on_register_pressed():
 func _on_register_show_password_toggled(toggled: bool):
 	register_password.secret = not toggled
 	register_password_confirm.secret = not toggled
+
+func _on_register_username_submitted(_text: String):
+	"""When Enter is pressed in username field, move to email field"""
+	register_email.grab_focus()
+
+func _on_register_email_submitted(_text: String):
+	"""When Enter is pressed in email field, move to password field"""
+	register_password.grab_focus()
+
+func _on_register_password_submitted(_text: String):
+	"""When Enter is pressed in password field, move to confirm field"""
+	register_password_confirm.grab_focus()
+
+func _on_register_password_confirm_submitted(_text: String):
+	"""When Enter is pressed in confirm field, trigger registration if all fields are filled"""
+	var username = register_username.text.strip_edges()
+	var email = register_email.text.strip_edges()
+	var password = register_password.text
+	var password_confirm = register_password_confirm.text
+	
+	if not username.is_empty() and not email.is_empty() and not password.is_empty() and not password_confirm.is_empty():
+		_on_register_pressed()
 
 func _on_password_changed(new_text: String):
 	"""Update password strength indicator in real-time"""
