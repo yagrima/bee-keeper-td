@@ -131,17 +131,17 @@ func _ready():
 	
 	# Connect tower selection buttons
 	if stinger_button:
-		stinger_button.pressed.connect(func(): _on_tower_hotkey_pressed("stinger"))
+		stinger_button.pressed.connect(func(): handle_tower_hotkey("stinger", "Stinger Tower"))
 	if propolis_bomber_button:
-		propolis_bomber_button.pressed.connect(func(): _on_tower_hotkey_pressed("propolis_bomber"))
+		propolis_bomber_button.pressed.connect(func(): handle_tower_hotkey("propolis_bomber", "Propolis Bomber"))
 	if nectar_sprayer_button:
-		nectar_sprayer_button.pressed.connect(func(): _on_tower_hotkey_pressed("nectar_sprayer"))
+		nectar_sprayer_button.pressed.connect(func(): handle_tower_hotkey("nectar_sprayer", "Nectar Sprayer"))
 	if lightning_flower_button:
-		lightning_flower_button.pressed.connect(func(): _on_tower_hotkey_pressed("lightning_flower"))
+		lightning_flower_button.pressed.connect(func(): handle_tower_hotkey("lightning_flower", "Lightning Flower"))
 	
 	# Connect speed button
 	if speed_button:
-		speed_button.pressed.connect(_on_speed_toggle_pressed)
+		speed_button.pressed.connect(_on_speed_button_pressed)
 
 	# Set up scene
 	setup_basic_map()
