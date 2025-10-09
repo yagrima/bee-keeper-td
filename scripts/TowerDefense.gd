@@ -58,15 +58,8 @@ var current_tower_type: String = "stinger"
 var available_tower_types: Array[String] = ["stinger", "propolis_bomber", "nectar_sprayer", "lightning_flower"]
 
 # UI References (created dynamically)
-var wave_composition_label: Label
 var wave_countdown_label: Label
 var place_tower_button: Button
-
-# Individual tower buttons
-var stinger_button: Button
-var propolis_bomber_button: Button
-var nectar_sprayer_button: Button
-var lightning_flower_button: Button
 
 # State flags
 var is_in_tower_placement: bool = false
