@@ -89,7 +89,7 @@ offset_right = 1280.0
 offset_bottom = 720.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(1, 0.75, 0, 1)
+color = Color(0.2, 0.6, 0.2, 1)
 z_index = -1000
 
 [node name="BoardFrame" type="Panel" parent="UI"]
@@ -135,6 +135,15 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 20
 alignment = 0
+
+[node name="WaveCompositionLabel" type="Label" parent="UI/WaveInfoPanel/WaveInfoContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.9, 0.7, 1)
+theme_override_font_sizes/font_size = 14
+text = "Next: Wave 1: 5 Standard"
+horizontal_alignment = 0
+vertical_alignment = 1
 
 [node name="GameUI" type="Control" parent="UI"]
 layout_mode = 3
@@ -263,3 +272,53 @@ theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBoxFlat_ui_button")
 theme_override_styles/hover = SubResource("StyleBoxFlat_ui_button_hover")
 text = "Start Wave"
+
+[node name="StingerButton" type="Button" parent="UI/GameUI/ControlsPanel/Controls"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.7, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_ui_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ui_button_hover")
+text = "Stinger (Q) - 20🍯"
+tooltip_text = "Fast rapid-fire tower"
+
+[node name="PropolisBomberButton" type="Button" parent="UI/GameUI/ControlsPanel/Controls"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.7, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_ui_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ui_button_hover")
+text = "Propolis (W) - 30🍯"
+tooltip_text = "Area damage tower"
+
+[node name="NectarSprayerButton" type="Button" parent="UI/GameUI/ControlsPanel/Controls"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.7, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_ui_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ui_button_hover")
+text = "Nectar (E) - 25🍯"
+tooltip_text = "Slowing tower"
+
+[node name="LightningFlowerButton" type="Button" parent="UI/GameUI/ControlsPanel/Controls"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.7, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_ui_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ui_button_hover")
+text = "Lightning (R) - 35🍯"
+tooltip_text = "Chain lightning tower"
+
+[node name="SpeedButton" type="Button" parent="UI/GameUI/ControlsPanel/Controls"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.7, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_ui_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ui_button_hover")
+text = "Speed: 1x"
+tooltip_text = "Toggle game speed (1x/2x/3x)"

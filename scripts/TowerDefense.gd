@@ -35,9 +35,14 @@ var debug_system: TDDebug
 @onready var honey_label = $UI/GameUI/TopBar/ResourceDisplay/HoneyPanel/HoneyLabel
 @onready var health_label = $UI/GameUI/TopBar/ResourceDisplay/HealthPanel/HealthLabel
 @onready var wave_label = $UI/GameUI/TopBar/ResourceDisplay/WavePanel/WaveLabel
+@onready var wave_composition_label = $UI/WaveInfoPanel/WaveInfoContainer/WaveCompositionLabel
 @onready var start_wave_button = $UI/GameUI/ControlsPanel/Controls/StartWaveButton
+@onready var stinger_button = $UI/GameUI/ControlsPanel/Controls/StingerButton
+@onready var propolis_bomber_button = $UI/GameUI/ControlsPanel/Controls/PropolisBomberButton
+@onready var nectar_sprayer_button = $UI/GameUI/ControlsPanel/Controls/NectarSprayerButton
+@onready var lightning_flower_button = $UI/GameUI/ControlsPanel/Controls/LightningFlowerButton
+@onready var speed_button = $UI/GameUI/ControlsPanel/Controls/SpeedButton
 @onready var back_button = $UI/GameUI/TopBar/ResourceDisplay/BackButton
-@onready var speed_button: Button
 
 # =============================================================================
 # PUBLIC VARIABLES
@@ -101,8 +106,14 @@ func _ready():
 	ui_manager.honey_label = honey_label
 	ui_manager.health_label = health_label
 	ui_manager.wave_label = wave_label
+	ui_manager.wave_composition_label = wave_composition_label
 	ui_manager.start_wave_button = start_wave_button
 	ui_manager.place_tower_button = place_tower_button
+	ui_manager.speed_button = speed_button
+	ui_manager.stinger_button = stinger_button
+	ui_manager.propolis_bomber_button = propolis_bomber_button
+	ui_manager.nectar_sprayer_button = nectar_sprayer_button
+	ui_manager.lightning_flower_button = lightning_flower_button
 
 	# Set game state
 	GameManager.change_game_state(GameManager.GameState.TOWER_DEFENSE)
@@ -124,6 +135,20 @@ func _ready():
 		place_tower_button.pressed.connect(func(): _on_place_tower_pressed())
 	if back_button:
 		back_button.pressed.connect(_on_back_pressed)
+	
+	# Connect tower selection buttons
+	if stinger_button:
+		stinger_button.pressed.connect(func(): _on_tower_hotkey_pressed("stinger"))
+	if propolis_bomber_button:
+		propolis_bomber_button.pressed.connect(func(): _on_tower_hotkey_pressed("propolis_bomber"))
+	if nectar_sprayer_button:
+		nectar_sprayer_button.pressed.connect(func(): _on_tower_hotkey_pressed("nectar_sprayer"))
+	if lightning_flower_button:
+		lightning_flower_button.pressed.connect(func(): _on_tower_hotkey_pressed("lightning_flower"))
+	
+	# Connect speed button
+	if speed_button:
+		speed_button.pressed.connect(_on_speed_toggle_pressed)
 
 	# Set up scene
 	setup_basic_map()
