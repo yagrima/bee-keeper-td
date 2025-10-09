@@ -14,12 +14,13 @@
   [headers.values]
     # Content Security Policy (CSP) - XSS Protection
     # CRITICAL: Godot Web needs 'wasm-unsafe-eval' for WebAssembly!
+    # NOTE: 'unsafe-inline' + 'unsafe-eval' required for JavaScriptBridge.eval()
     Content-Security-Policy = """
       default-src 'self';
-      script-src 'self' 'wasm-unsafe-eval';
+      script-src 'self' 'wasm-unsafe-eval' 'unsafe-inline' 'unsafe-eval';
       connect-src 'self' https://*.supabase.co wss://*.supabase.co;
       style-src 'self' 'unsafe-inline';
-      img-src 'self' data: https:;
+      img-src 'self' data: https: blob:;
       font-src 'self';
       frame-ancestors 'none';
       base-uri 'self';

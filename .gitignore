@@ -21,7 +21,7 @@ Thumbs.db
 *.log
 
 # Build artifacts
-builds/
+# builds/  # ✅ Disabled for web deployment via Git
 export/
 dist/
 
