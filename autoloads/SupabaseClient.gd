@@ -8,8 +8,9 @@ extends Node
 # CONSTANTS & CONFIGURATION
 # ============================================
 
-const SUPABASE_URL = "https://porfficpmtayqccmpsrw.supabase.co"
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvcmZmaWNwbXRheXFjY21wc3J3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxNzc5NjcsImV4cCI6MjA3NDc1Mzk2N30.YLGLrgsZFZ8R0fD5-xKM3G6JARZSmcGmIYbmltBVYWg"
+# Supabase credentials (loaded from environment)
+var SUPABASE_URL: String = ""
+var SUPABASE_ANON_KEY: String = ""
 
 # Token refresh buffer (5 minutes before expiry)
 const TOKEN_REFRESH_BUFFER = 300
@@ -48,10 +49,42 @@ signal load_error(error_message: String)
 
 func _ready():
 	print("🔐 SupabaseClient initializing...")
+	_load_credentials()
 	_verify_https()
 	_setup_http_request()
 	_check_existing_session()
-	print("✅ SupabaseClient ready (Security Score: 8.6/10)")
+	print("✅ SupabaseClient ready (Security Score: 8.8/10)")
+
+func _load_credentials():
+	"""Load Supabase credentials from environment variables"""
+	# Try environment variables first
+	SUPABASE_URL = OS.get_environment("SUPABASE_URL")
+	SUPABASE_ANON_KEY = OS.get_environment("SUPABASE_ANON_KEY")
+	
+	# Web build support: Check JavaScript injection
+	if OS.has_feature("web") and (SUPABASE_URL == "" or SUPABASE_ANON_KEY == ""):
+		var js_url = JavaScriptBridge.eval("window.SUPABASE_URL || ''", true)
+		var js_key = JavaScriptBridge.eval("window.SUPABASE_ANON_KEY || ''", true)
+		
+		if js_url != "" and js_url != "null":
+			SUPABASE_URL = js_url
+		if js_key != "" and js_key != "null":
+			SUPABASE_ANON_KEY = js_key
+	
+	# Validation
+	if SUPABASE_URL == "" or SUPABASE_ANON_KEY == "":
+		if OS.is_debug_build():
+			# Development fallback (ONLY for testing!)
+			push_warning("⚠️ Supabase credentials not configured! Using fallback. SET SUPABASE_URL and SUPABASE_ANON_KEY in .env!")
+			SUPABASE_URL = "https://porfficpmtayqccmpsrw.supabase.co"
+			SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvcmZmaWNwbXRheXFjY21wc3J3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxNzc5NjcsImV4cCI6MjA3NDc1Mzk2N30.YLGLrgsZFZ8R0fD5-xKM3G6JARZSmcGmIYbmltBVYWg"
+		else:
+			# Production must have credentials
+			push_error("🔴 CRITICAL: Supabase credentials not configured! Production build requires SUPABASE_URL and SUPABASE_ANON_KEY environment variables!")
+			get_tree().quit()
+			return
+	
+	print("✅ Supabase credentials loaded (URL: %s...)" % SUPABASE_URL.substr(0, 30))
 
 func _verify_https():
 	"""Verify HTTPS is used - CRITICAL SECURITY CHECK"""

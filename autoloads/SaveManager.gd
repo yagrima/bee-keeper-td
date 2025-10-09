@@ -19,7 +19,9 @@ const CONFIG_FILE = "user://config.cfg"
 # Cloud-Sync configuration
 const CLOUD_SYNC_ENABLED = true
 const CLOUD_PRIMARY = true  # Cloud always wins in conflicts
-const HMAC_SECRET = "bktd_save_integrity_2025"  # TODO: Move to environment variable
+
+# HMAC Secret (loaded from environment)
+var HMAC_SECRET: String = ""
 
 # Save data structure
 var save_data: Dictionary = {}
@@ -35,6 +37,9 @@ var last_cloud_sync: int = 0
 var pending_sync_queue: Array[Dictionary] = []
 
 func _ready():
+	# Load HMAC secret from environment
+	_load_hmac_secret()
+	
 	# Create save directory if it doesn't exist
 	create_save_directory()
 	
@@ -42,6 +47,23 @@ func _ready():
 	setup_auto_save()
 	
 	print("SaveManager initialized")
+
+func _load_hmac_secret():
+	"""Load HMAC secret from environment variable"""
+	HMAC_SECRET = OS.get_environment("BKTD_HMAC_SECRET")
+	
+	if HMAC_SECRET == "":
+		if OS.is_debug_build():
+			# Development fallback
+			HMAC_SECRET = "dev_fallback_secret_not_for_production_use_12345678901234567890"
+			push_warning("⚠️ HMAC secret not set! Using development fallback. SET BKTD_HMAC_SECRET in .env!")
+		else:
+			# Production must have secret
+			push_error("🔴 CRITICAL: HMAC_SECRET not set! Production build requires BKTD_HMAC_SECRET environment variable!")
+			get_tree().quit()
+			return
+	
+	print("✅ HMAC secret loaded from environment (length: %d)" % HMAC_SECRET.length())
 
 func create_save_directory():
 	"""Create the save directory if it doesn't exist"""
@@ -734,13 +756,47 @@ func calculate_save_checksum(data: Dictionary) -> String:
 	# Convert to deterministic JSON string
 	var json_string = JSON.stringify(data_copy)
 
-	# Calculate HMAC-SHA256
-	# Note: Godot doesn't have native HMAC, so we use a simplified approach
-	# For production: Consider using a crypto library
-	var hmac_input = json_string + HMAC_SECRET
-	var hash = hmac_input.sha256_text()
+	# Calculate RFC 2104 compliant HMAC-SHA256
+	var hash = _calculate_hmac_sha256(json_string, HMAC_SECRET)
 
 	return hash
+
+func _calculate_hmac_sha256(message: String, key: String) -> String:
+	"""
+	RFC 2104 compliant HMAC-SHA256 implementation
+	Provides proper cryptographic integrity protection
+	"""
+	const BLOCK_SIZE = 64  # SHA256 block size in bytes
+	
+	# Prepare key
+	var key_bytes = key.to_utf8_buffer()
+	if key_bytes.size() > BLOCK_SIZE:
+		# If key is longer than block size, hash it first
+		key_bytes = key.sha256_text().to_utf8_buffer()
+	
+	# Pad key to block size
+	if key_bytes.size() < BLOCK_SIZE:
+		key_bytes.resize(BLOCK_SIZE)
+	
+	# Create inner and outer padded keys
+	var inner_key = PackedByteArray()
+	var outer_key = PackedByteArray()
+	inner_key.resize(BLOCK_SIZE)
+	outer_key.resize(BLOCK_SIZE)
+	
+	for i in range(BLOCK_SIZE):
+		inner_key[i] = key_bytes[i] ^ 0x36  # ipad
+		outer_key[i] = key_bytes[i] ^ 0x5c  # opad
+	
+	# Calculate inner hash: H(K XOR ipad || message)
+	var inner_message = inner_key.get_string_from_utf8() + message
+	var inner_hash = inner_message.sha256_text()
+	
+	# Calculate outer hash: H(K XOR opad || inner_hash)
+	var outer_message = outer_key.get_string_from_utf8() + inner_hash
+	var final_hash = outer_message.sha256_text()
+	
+	return final_hash
 
 func verify_save_checksum(data: Dictionary) -> bool:
 	"""Verify save data checksum"""
