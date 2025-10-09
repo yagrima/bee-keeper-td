@@ -92,6 +92,10 @@ func _ready():
 	input_handler = TDInputHandler.new(self)
 	tower_selection = TDTowerSelection.new(self)
 	debug_system = TDDebug.new(self)
+	
+	# Web build detection
+	if OS.has_feature("web"):
+		print("🌐 Web build detected - Direct input bypass active")
 
 	# Set up ui_manager references
 	ui_manager.honey_label = honey_label
@@ -144,6 +148,12 @@ func _ready():
 
 func _input(event):
 	"""Delegate input handling to input_handler component"""
+	# WEB BUILD: Direct input bypass (inline)
+	if OS.has_feature("web"):
+		if _handle_web_input_direct(event):
+			return  # Event was handled
+	
+	# Normal input handling
 	input_handler.handle_input(event)
 
 func _process(delta):
@@ -549,3 +559,64 @@ func start_tower_following_mouse():
 func stop_tower_following_mouse():
 	"""Legacy: Used by metaprogression system"""
 	pass
+
+# =============================================================================
+# WEB INPUT FIX (INLINE - No external dependencies)
+# =============================================================================
+
+func _handle_web_input_direct(event: InputEvent) -> bool:
+	"""
+	Direct input handler for web builds - bypasses complex delegation
+	Returns true if event was handled
+	"""
+	# Direct mouse click handling
+	if event is InputEventMouseButton and event.pressed:
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			print("🖱️ WEB: Direct mouse click at position: %s" % event.position)
+			# Directly call tower placement
+			if current_tower_type and is_in_tower_placement:
+				return false  # Let normal system handle
+			elif current_tower_type:
+				tower_placer.start_tower_placement(current_tower_type)
+				return true
+			return false
+		elif event.button_index == MOUSE_BUTTON_RIGHT:
+			print("🖱️ WEB: Direct right-click - Clear selection")
+			clear_tower_selection()
+			return true
+	
+	# Direct keyboard handling
+	if event is InputEventKey and event.pressed:
+		var keycode = event.keycode
+		
+		# Manual hotkey detection
+		if keycode == KEY_Q:
+			print("⌨️  WEB: Direct Q key - Stinger Tower")
+			handle_tower_hotkey("stinger", "Stinger Tower")
+			return true
+		elif keycode == KEY_W:
+			print("⌨️  WEB: Direct W key - Propolis Bomber")
+			handle_tower_hotkey("propolis_bomber", "Propolis Bomber Tower")
+			return true
+		elif keycode == KEY_E:
+			print("⌨️  WEB: Direct E key - Nectar Sprayer")
+			handle_tower_hotkey("nectar_sprayer", "Nectar Sprayer Tower")
+			return true
+		elif keycode == KEY_R:
+			print("⌨️  WEB: Direct R key - Lightning Flower")
+			handle_tower_hotkey("lightning_flower", "Lightning Flower Tower")
+			return true
+		elif keycode == KEY_SPACE:
+			print("⌨️  WEB: Direct SPACE key - Start Wave")
+			_on_start_wave_pressed()
+			return true
+		elif keycode == KEY_F:
+			print("⌨️  WEB: Direct F key - Speed Toggle")
+			_on_speed_button_pressed()
+			return true
+		elif keycode == KEY_ESCAPE:
+			print("⌨️  WEB: Direct ESC key - Clear Selection")
+			clear_tower_selection()
+			return true
+	
+	return false

@@ -28,6 +28,14 @@ extends Control
 
 func _ready():
 	print("🔐 AuthScreen initialized")
+	
+	# WEB BUILD: Auto-focus first input field
+	if OS.has_feature("web"):
+		print("🌐 Web build detected - Auto-focusing login email field")
+		# Delay focus to ensure UI is fully loaded
+		await get_tree().create_timer(0.1).timeout
+		login_email.grab_focus()
+		print("✅ Login email field focused")
 
 	# Connect button signals
 	login_button.pressed.connect(_on_login_pressed)
