@@ -4,6 +4,7 @@ extends Node
 signal wave_started(wave_number)
 signal wave_completed(wave_number, enemies_killed)
 signal enemy_spawned(enemy)
+signal enemy_reached_end(enemy)
 signal all_waves_completed
 
 # Wave configuration
@@ -211,6 +212,9 @@ func _on_enemy_reached_end(enemy: Enemy, damage: int):
 	if enemy in enemies_in_wave:
 		enemies_in_wave.erase(enemy)
 
+	# Emit signal to notify TowerDefense scene
+	enemy_reached_end.emit(enemy)
+	
 	# Notify the game that player took damage
 	var td_scene = get_tree().current_scene
 	if td_scene.has_method("take_damage"):
