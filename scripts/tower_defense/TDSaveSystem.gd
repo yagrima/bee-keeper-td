@@ -31,7 +31,7 @@ func auto_load_game():
 
 	# Fallback to local save
 	if SaveManager.save_file_exists("main"):
-		var success = SaveManager.load_game("main")
+		var success = await SaveManager.load_game("main")
 		if success:
 			print("✅ Local data loaded successfully")
 		else:

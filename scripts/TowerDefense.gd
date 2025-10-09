@@ -11,17 +11,21 @@ var metaprogression: TDMetaprogression
 @onready var build_layer = $Map/BuildLayer
 @onready var camera = $Camera2D
 
-@onready var honey_label = $UI/GameUI/TopBar/ResourceDisplay/HoneyLabel
-@onready var health_label = $UI/GameUI/TopBar/ResourceDisplay/HealthLabel
-@onready var wave_label = $UI/GameUI/TopBar/ResourceDisplay/WaveLabel
-@onready var wave_composition_label: Label
-@onready var wave_countdown_label: Label
-@onready var start_wave_button = $UI/GameUI/Controls/StartWaveButton
-@onready var place_tower_button = $UI/GameUI/Controls/PlaceTowerButton
-@onready var back_button = $UI/GameUI/Controls/BackButton
+@onready var honey_label = $UI/GameUI/TopBar/ResourceDisplay/HoneyPanel/HoneyLabel
+@onready var health_label = $UI/GameUI/TopBar/ResourceDisplay/HealthPanel/HealthLabel
+@onready var wave_label = $UI/GameUI/TopBar/ResourceDisplay/WavePanel/WaveLabel
+@onready var start_wave_button = $UI/GameUI/ControlsPanel/Controls/StartWaveButton
+@onready var back_button = $UI/GameUI/TopBar/ResourceDisplay/BackButton
+
+# Wave labels are created dynamically in TDUIManager
+var wave_composition_label: Label
+var wave_countdown_label: Label
+
+# Reference for dynamically created buttons
+var place_tower_button: Button
 @onready var speed_button: Button
 
-var current_wave: int = 1
+var current_wave: int = 0  # 0 = no wave started yet, 1+ = wave number
 var player_health: int = 20
 var honey: int = 100
 var speed_mode: int = 0  # 0 = normal, 1 = 2x, 2 = 3x
@@ -30,6 +34,12 @@ var speed_mode: int = 0  # 0 = normal, 1 = 2x, 2 = 3x
 var tower_placer: TowerPlacer
 var current_tower_type: String = "stinger"
 var available_tower_types: Array[String] = ["stinger", "propolis_bomber", "nectar_sprayer", "lightning_flower"]
+
+# Debug overlay for keyboard events (development only)
+var debug_label: Label = null
+var debug_messages: Array[String] = []
+const MAX_DEBUG_MESSAGES = 25  # Increased for more verbose output
+var is_development_build: bool = false  # Detected automatically
 
 # Individual tower buttons
 var stinger_button: Button
@@ -74,6 +84,13 @@ func _ready():
 
 	GameManager.change_game_state(GameManager.GameState.TOWER_DEFENSE)
 
+	# Check if we're in development mode
+	check_development_mode()
+	
+	# Create debug overlay (development only)
+	if is_development_build:
+		create_debug_overlay()
+
 	# Reset game state for new game
 	reset_game_state()
 
@@ -109,18 +126,27 @@ func _ready():
 	ui_manager.setup_wave_composition_ui()
 	ui_manager.setup_wave_countdown_ui()
 	ui_manager.setup_individual_tower_buttons()
+	add_debug_message("About to call setup_speed_button()...")
 	ui_manager.setup_speed_button()
+	add_debug_message("setup_speed_button() completed")
+	
+	# CRITICAL CHECK: Verify button exists after setup
+	if ui_manager.speed_button:
+		add_debug_message("✅ speed_button EXISTS after setup")
+	else:
+		add_debug_message("❌ speed_button is NULL after setup!")
+	
 	metaprogression.setup_metaprogression_fields()
 
 	# Set up UI manager references after components are created
-	ui_manager.wave_composition_label = wave_composition_label
-	ui_manager.wave_countdown_label = wave_countdown_label
+	# NOTE: wave_composition_label and wave_countdown_label are created in setup_wave_composition_ui/setup_wave_countdown_ui
+	# and their references are already stored in ui_manager, so we don't need to set them here
 	ui_manager.wave_countdown_timer = wave_countdown_timer
 	ui_manager.stinger_button = stinger_button
 	ui_manager.propolis_bomber_button = propolis_bomber_button
 	ui_manager.nectar_sprayer_button = nectar_sprayer_button
 	ui_manager.lightning_flower_button = lightning_flower_button
-	ui_manager.speed_button = speed_button
+	# NOTE: speed_button is created dynamically in setup_speed_button(), not from scene tree
 
 	update_ui()
 
@@ -220,7 +246,7 @@ func create_grid_overlay(ui_canvas: CanvasLayer, offset: Vector2, map_size: Vect
 	shader_material.set_shader_parameter("grid_size", 32.0)
 	shader_material.set_shader_parameter("grid_color", Color(1.0, 1.0, 1.0, 0.4))
 	shader_material.set_shader_parameter("background_color", Color(0.0, 0.0, 0.0, 0.0))
-	shader_material.set_shader_parameter("line_width", 0.5)
+	shader_material.set_shader_parameter("line_width", 1.5)
 
 	grid_rect.material = shader_material
 	ui_canvas.add_child(grid_rect)
@@ -358,7 +384,13 @@ func _on_start_wave_pressed():
 	# Stop any existing auto wave timer and countdown
 	wave_controller.stop_auto_wave_timer()
 
+	# Increment wave BEFORE starting it
+	current_wave += 1
+	print("Starting wave %d" % current_wave)
+	
 	wave_manager.start_wave(current_wave)
+	update_ui()  # Update UI immediately to show correct wave
+	
 	if start_wave_button:
 		start_wave_button.disabled = true
 
@@ -412,7 +444,59 @@ func setup_tower_placer():
 	tower_placer.tower_placement_failed.connect(_on_tower_placement_failed)
 	tower_placer.placement_mode_changed.connect(_on_placement_mode_changed)
 
+func check_development_mode():
+	"""Check if we're running in development mode"""
+	is_development_build = (
+		OS.is_debug_build() or  # Debug build
+		OS.has_feature("debug") or  # Debug feature enabled
+		OS.get_environment("GODOT_DEBUG") == "1" or  # Debug environment variable
+		OS.get_environment("BEEKEEPER_DEBUG") == "1"  # Custom debug flag
+	)
+	
+	if is_development_build:
+		print("🛠️ Development build detected - debug overlay enabled")
+	else:
+		print("🚀 Production build detected - debug overlay disabled")
+
+func create_debug_overlay():
+	"""Create an in-game debug overlay to show keyboard events"""
+	debug_label = Label.new()
+	debug_label.position = Vector2(10, 10)
+	debug_label.add_theme_font_size_override("font_size", 12)
+	debug_label.add_theme_color_override("font_color", Color.YELLOW)
+	debug_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	debug_label.add_theme_constant_override("outline_size", 2)
+	debug_label.z_index = 1000  # On top of everything
+	debug_label.text = "DEBUG: Press any key\n"
+	add_child(debug_label)
+	print("✅ Debug overlay created")
+
+func add_debug_message(msg: String):
+	"""Add a message to the debug overlay (only in development builds)"""
+	if not is_development_build or not debug_label:
+		return
+	
+	debug_messages.append(msg)
+	if debug_messages.size() > MAX_DEBUG_MESSAGES:
+		debug_messages.pop_front()
+	
+	if debug_label:
+		debug_label.text = "\n".join(debug_messages)
+
 func _input(event):
+	# Debug: Log keyboard events in-game
+	if event is InputEventKey and event.pressed and not event.is_echo():
+		var key_name = OS.get_keycode_string(event.keycode)
+		add_debug_message("KEY: %s (code: %d)" % [key_name, event.keycode])
+		
+		if event.keycode == KEY_F:
+			add_debug_message("  -> F DETECTED!")
+			add_debug_message("  -> HotkeyMgr: %d" % HotkeyManager.get_hotkey("speed_toggle"))
+			var is_speed = HotkeyManager.is_hotkey_pressed(event, "speed_toggle")
+			add_debug_message("  -> is_hotkey: %s" % is_speed)
+			if is_speed:
+				add_debug_message("  -> CALLING _on_speed_button_pressed()")
+	
 	# Handle mouse clicks for tower selection first
 	if event is InputEventMouseButton and event.pressed:
 		print("\n" + "=".repeat(80))
@@ -439,7 +523,10 @@ func _input(event):
 		return  # Don't process other events for mouse clicks
 
 	# Handle keyboard events
-	if not event or not event is InputEventKey or not event.pressed:
+	if not event or not event is InputEventKey:
+		return
+	
+	if not event.pressed or event.is_echo():
 		return
 
 	# Use dynamic hotkey system
@@ -685,7 +772,7 @@ func reset_game_state():
 
 	# Reset player stats
 	player_health = 20
-	current_wave = 1
+	current_wave = 0  # 0 = no wave started yet, will show "Next: Wave 1"
 
 	# Reset GameManager resources
 	GameManager.set_resource("honey", 100)
@@ -724,9 +811,24 @@ func _on_cursor_timer_timeout():
 
 func _on_speed_button_pressed():
 	# Cycle through speed modes: 0 -> 1 -> 2 -> 0
+	var old_mode = speed_mode
 	speed_mode = (speed_mode + 1) % 3
+	add_debug_message("Speed: %d -> %d" % [old_mode, speed_mode])
 	apply_speed_mode()
-	ui_manager.update_speed_button_text()
+	add_debug_message("time_scale: %.1f" % Engine.time_scale)
+	
+	# CRITICAL: Check if button still exists
+	if ui_manager and ui_manager.speed_button:
+		add_debug_message("✅ speed_button EXISTS when F pressed")
+	elif ui_manager:
+		add_debug_message("❌ speed_button is NULL when F pressed!")
+	
+	# Update button text
+	add_debug_message("Calling update_speed_button_text()...")
+	if ui_manager:
+		ui_manager.update_speed_button_text()
+	else:
+		add_debug_message("ERROR: ui_manager is null!")
 
 func apply_speed_mode():
 	match speed_mode:
