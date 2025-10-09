@@ -93,7 +93,7 @@ body {
 		<link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
 <link rel="apple-touch-icon" href="index.apple-touch-icon.png"/>
 <script>
-// BeeKeeperTD - Environment Variables für Web Build
+// BeeKeeperTD - Environment Variables for Web Build
 window.BKTD_ENV = {
     SUPABASE_URL: "%SUPABASE_URL%",
     SUPABASE_ANON_KEY: "%SUPABASE_ANON_KEY%",
@@ -101,11 +101,11 @@ window.BKTD_ENV = {
 };
 
 if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    console.warn("[BeeKeeperTD] Running on localhost - using development environment variables");
+    console.warn("[BeeKeeperTD] Running on localhost - using development fallback");
     window.BKTD_ENV = {
         SUPABASE_URL: "https://porfficpmtayqccmpsrw.supabase.co",
-        SUPABASE_ANON_KEY: "YOUR_ANON_KEY_HERE",
-        BKTD_HMAC_SECRET: "YOUR_HMAC_SECRET_HERE"
+        SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvcmZmaWNwbXRheXFjY21wc3J3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mjc3NzIwNzIsImV4cCI6MjA0MzM0ODA3Mn0.l_b-7bwh3sSxhXfIJQeN5lNIWBw7OxczFhSjKRc76zE",
+        BKTD_HMAC_SECRET: "dev-secret-key-not-for-production-use-min-32-chars-required"
     };
 }
 </script>
@@ -127,7 +127,7 @@ if (window.location.hostname === 'localhost' || window.location.hostname === '12
 
 		<script src="index.js"></script>
 		<script>
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":318792,"index.wasm":38057390},"focusCanvas":false,"gdextensionLibs":[],"godotPoolSize":4};
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":309300,"index.wasm":38057390},"focusCanvas":false,"gdextensionLibs":[],"godotPoolSize":4};
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
