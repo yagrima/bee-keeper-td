@@ -3,7 +3,7 @@
 
 [build]
   publish = "builds/web"
-  command = "echo 'Godot export should be done before deploy'"
+  command = "bash netlify-build.sh"
 
 # ============================================
 # SECURITY HEADERS (✅ FIXED)
