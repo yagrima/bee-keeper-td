@@ -21,7 +21,7 @@ Thumbs.db
 *.log
 
 # Build artifacts
-builds/
+# builds/  # Disabled for Netlify Git-based deployment
 export/
 dist/
 
