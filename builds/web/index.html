@@ -99,7 +99,7 @@ window.BKTD_ENV = {
     SUPABASE_ANON_KEY: "%SUPABASE_ANON_KEY%",
     BKTD_HMAC_SECRET: "%BKTD_HMAC_SECRET%"
 };
-// Fallback für lokales Testen
+
 if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     console.warn("[BeeKeeperTD] Running on localhost - using development environment variables");
     window.BKTD_ENV = {
@@ -127,7 +127,7 @@ if (window.location.hostname === 'localhost' || window.location.hostname === '12
 
 		<script src="index.js"></script>
 		<script>
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":318680,"index.wasm":38057390},"focusCanvas":false,"gdextensionLibs":[],"godotPoolSize":4};
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":318792,"index.wasm":38057390},"focusCanvas":false,"gdextensionLibs":[],"godotPoolSize":4};
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
