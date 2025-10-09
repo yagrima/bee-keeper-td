@@ -228,14 +228,20 @@ func _store_tokens_secure(access_token: String, refresh_token: String, expires_i
 	Access Token: SessionStorage (tab-scope security)
 	Refresh Token: Encrypted LocalStorage (Web Crypto API)
 	"""
-	if not OS.has_feature("web"):
-		push_warning("Token storage only available in web builds")
-		return
-
 	# Calculate expiry time
 	var expires_at = Time.get_unix_time_from_system() + expires_in
+	
+	if not OS.has_feature("web"):
+		push_warning("⚠️ Token storage only available in web builds - using in-memory session")
+		# For desktop/editor: Store in memory only (session-based)
+		_is_authenticated = true
+		_current_user_id = user_id
+		print("✅ Tokens stored in memory (Desktop/Editor mode)")
+		print("   User ID: %s" % user_id)
+		print("   Expires at: %s" % Time.get_datetime_string_from_unix_time(expires_at))
+		return
 
-	# Store Access Token in SessionStorage (safer against XSS)
+	# Web Build: Store Access Token in SessionStorage (safer against XSS)
 	JavaScriptBridge.eval("sessionStorage.setItem('%s', '%s')" % [TOKEN_KEY, access_token])
 
 	# Store Refresh Token ENCRYPTED in LocalStorage
