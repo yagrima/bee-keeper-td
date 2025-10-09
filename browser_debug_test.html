@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Canvas Debug Test</title>
+</head>
+<body>
+    <h1>Canvas Klickbarkeits-Debug</h1>
+    <p>Kopiere diese Befehle in die Browser-Console:</p>
+    
+    <h2>1. Canvas Status prüfen:</h2>
+    <pre>
+const canvas = document.querySelector('canvas');
+console.log('Canvas Status:', {
+    pointerEvents: canvas.style.pointerEvents,
+    computedPointerEvents: window.getComputedStyle(canvas).pointerEvents,
+    zIndex: window.getComputedStyle(canvas).zIndex,
+    position: window.getComputedStyle(canvas).position,
+    hasFocus: document.activeElement === canvas,
+    activeElement: document.activeElement.tagName
+});
+    </pre>
+    
+    <h2>2. SOFORT-FIX: Canvas transparent machen</h2>
+    <pre>
+const canvas = document.querySelector('canvas');
+canvas.style.pointerEvents = 'none';
+console.log('✅ Canvas jetzt transparent für Maus-Events');
+console.log('Neue pointer-events:', window.getComputedStyle(canvas).pointerEvents);
+// JETZT TESTEN: Sind Buttons klickbar?
+    </pre>
+    
+    <h2>3. Alle Elemente über Canvas finden:</h2>
+    <pre>
+const canvas = document.querySelector('canvas');
+const canvasRect = canvas.getBoundingClientRect();
+const canvasZIndex = parseInt(window.getComputedStyle(canvas).zIndex) || 0;
+
+console.log('Canvas Position:', canvasRect);
+console.log('Canvas z-index:', canvasZIndex);
+
+// Finde alle Elemente die über Canvas liegen
+const allElements = document.querySelectorAll('*');
+let elementsOverCanvas = [];
+
+allElements.forEach(el => {
+    const style = window.getComputedStyle(el);
+    const zIndex = parseInt(style.zIndex) || 0;
+    
+    if (zIndex > canvasZIndex && style.display !== 'none') {
+        elementsOverCanvas.push({
+            tag: el.tagName,
+            zIndex: zIndex,
+            pointerEvents: style.pointerEvents,
+            element: el
+        });
+    }
+});
+
+console.log('Elemente über Canvas:', elementsOverCanvas);
+    </pre>
+    
+    <h2>4. Test ob Buttons existieren:</h2>
+    <pre>
+const buttons = document.querySelectorAll('button');
+const inputs = document.querySelectorAll('input');
+
+console.log('Gefundene Buttons:', buttons.length);
+buttons.forEach((btn, i) => {
+    console.log(`Button ${i}:`, {
+        text: btn.textContent,
+        visible: btn.offsetParent !== null,
+        disabled: btn.disabled,
+        zIndex: window.getComputedStyle(btn).zIndex
+    });
+});
+
+console.log('Gefundene Inputs:', inputs.length);
+inputs.forEach((inp, i) => {
+    console.log(`Input ${i}:`, {
+        type: inp.type,
+        visible: inp.offsetParent !== null,
+        disabled: inp.disabled
+    });
+});
+    </pre>
+    
+    <h2>5. Click-Event-Listener testen:</h2>
+    <pre>
+// Überwache alle Clicks
+document.addEventListener('click', (e) => {
+    console.log('CLICK detected on:', {
+        tag: e.target.tagName,
+        class: e.target.className,
+        x: e.clientX,
+        y: e.clientY,
+        target: e.target
+    });
+}, { capture: true });
+
+console.log('✅ Click-Listener aktiv - versuche jetzt zu klicken!');
+    </pre>
+</body>
+</html>

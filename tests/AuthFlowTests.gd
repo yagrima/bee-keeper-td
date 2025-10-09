@@ -11,6 +11,33 @@ var tests_passed: int = 0
 var tests_failed: int = 0
 var test_results: Array[Dictionary] = []
 
+# Helper function for signal-based waiting
+func _await_auth_signal(timeout_sec: float = 5.0) -> Dictionary:
+	"""Wait for auth signal and return result"""
+	var success = false
+	var error_msg = ""
+	var user_data = {}
+	
+	var auth_complete = func(s: bool, data: Dictionary):
+		success = s
+		user_data = data
+	var auth_err = func(err: String):
+		error_msg = err
+	
+	SupabaseClient.auth_completed.connect(auth_complete)
+	SupabaseClient.auth_error.connect(auth_err)
+	
+	var timeout = 0
+	var max_timeout = int(timeout_sec * 10)
+	while timeout < max_timeout and not success and error_msg == "":
+		await get_tree().create_timer(0.1).timeout
+		timeout += 1
+	
+	SupabaseClient.auth_completed.disconnect(auth_complete)
+	SupabaseClient.auth_error.disconnect(auth_err)
+	
+	return {"success": success, "error": error_msg, "data": user_data}
+
 func run_all_tests():
 	"""Run all auth flow tests"""
 	print("\n" + "=".repeat(60))
@@ -54,12 +81,33 @@ func test_registration_valid_credentials() -> bool:
 	if not SupabaseClient:
 		return _record_test(test_name, false, "SupabaseClient not available")
 
-	var result = await SupabaseClient.register(test_email, test_password, test_username)
-
-	if result.success:
+	# Signal-based testing
+	var success = false
+	var error_msg = ""
+	
+	var auth_complete = func(s: bool, _data: Dictionary):
+		success = s
+	var auth_err = func(err: String):
+		error_msg = err
+	
+	SupabaseClient.auth_completed.connect(auth_complete)
+	SupabaseClient.auth_error.connect(auth_err)
+	
+	SupabaseClient.register(test_email, test_password, test_username)
+	
+	# Wait for signal (max 5 seconds)
+	var timeout = 0
+	while timeout < 50 and not success and error_msg == "":
+		await get_tree().create_timer(0.1).timeout
+		timeout += 1
+	
+	SupabaseClient.auth_completed.disconnect(auth_complete)
+	SupabaseClient.auth_error.disconnect(auth_err)
+	
+	if success:
 		return _record_test(test_name, true, "Registration successful")
 	else:
-		return _record_test(test_name, false, "Registration failed: " + result.error)
+		return _record_test(test_name, false, "Registration failed: " + error_msg)
 
 func test_registration_weak_password() -> bool:
 	"""Test registration with weak password (< 14 chars)"""
@@ -73,10 +121,31 @@ func test_registration_weak_password() -> bool:
 	if not SupabaseClient:
 		return _record_test(test_name, false, "SupabaseClient not available")
 
-	var result = await SupabaseClient.register(test_email, test_password, test_username)
-
+	# Signal-based testing (expecting error)
+	var success = false
+	var error_msg = ""
+	
+	var auth_complete = func(s: bool, _data: Dictionary):
+		success = s
+	var auth_err = func(err: String):
+		error_msg = err
+	
+	SupabaseClient.auth_completed.connect(auth_complete)
+	SupabaseClient.auth_error.connect(auth_err)
+	
+	SupabaseClient.register(test_email, test_password, test_username)
+	
+	# Wait for signal (max 5 seconds)
+	var timeout = 0
+	while timeout < 50 and not success and error_msg == "":
+		await get_tree().create_timer(0.1).timeout
+		timeout += 1
+	
+	SupabaseClient.auth_completed.disconnect(auth_complete)
+	SupabaseClient.auth_error.disconnect(auth_err)
+	
 	# Should fail with password validation error
-	if not result.success and "password" in result.error.to_lower():
+	if error_msg != "" and "password" in error_msg.to_lower():
 		return _record_test(test_name, true, "Correctly rejected weak password")
 	else:
 		return _record_test(test_name, false, "Should reject weak password")
@@ -93,14 +162,52 @@ func test_registration_duplicate_email() -> bool:
 	if not SupabaseClient:
 		return _record_test(test_name, false, "SupabaseClient not available")
 
-	# First registration
-	await SupabaseClient.register(test_email, test_password, test_username)
-
-	# Second registration with same email
-	var result = await SupabaseClient.register(test_email, test_password, test_username + "2")
-
+	# First registration (should succeed)
+	var success1 = false
+	var error1 = ""
+	
+	var complete1 = func(s: bool, _data: Dictionary):
+		success1 = s
+	var err1 = func(e: String):
+		error1 = e
+	
+	SupabaseClient.auth_completed.connect(complete1)
+	SupabaseClient.auth_error.connect(err1)
+	
+	SupabaseClient.register(test_email, test_password, test_username)
+	
+	var timeout1 = 0
+	while timeout1 < 50 and not success1 and error1 == "":
+		await get_tree().create_timer(0.1).timeout
+		timeout1 += 1
+	
+	SupabaseClient.auth_completed.disconnect(complete1)
+	SupabaseClient.auth_error.disconnect(err1)
+	
+	# Second registration with same email (should fail)
+	var success2 = false
+	var error2 = ""
+	
+	var complete2 = func(s: bool, _data: Dictionary):
+		success2 = s
+	var err2 = func(e: String):
+		error2 = e
+	
+	SupabaseClient.auth_completed.connect(complete2)
+	SupabaseClient.auth_error.connect(err2)
+	
+	SupabaseClient.register(test_email, test_password, test_username + "2")
+	
+	var timeout2 = 0
+	while timeout2 < 50 and not success2 and error2 == "":
+		await get_tree().create_timer(0.1).timeout
+		timeout2 += 1
+	
+	SupabaseClient.auth_completed.disconnect(complete2)
+	SupabaseClient.auth_error.disconnect(err2)
+	
 	# Should fail with duplicate error
-	if not result.success and ("already" in result.error.to_lower() or "exists" in result.error.to_lower()):
+	if error2 != "" and ("already" in error2.to_lower() or "exists" in error2.to_lower()):
 		return _record_test(test_name, true, "Correctly rejected duplicate email")
 	else:
 		return _record_test(test_name, false, "Should reject duplicate email")
@@ -122,18 +229,24 @@ func test_login_valid_credentials() -> bool:
 		return _record_test(test_name, false, "SupabaseClient not available")
 
 	# Register first
-	await SupabaseClient.register(test_email, test_password, test_username)
+	SupabaseClient.register(test_email, test_password, test_username)
+	var reg_result = await _await_auth_signal()
+	
+	if not reg_result.success:
+		return _record_test(test_name, false, "Registration failed: " + reg_result.error)
 
 	# Logout to clear session
-	await SupabaseClient.logout()
+	SupabaseClient.logout()
+	await _await_auth_signal()
 
 	# Login
-	var result = await SupabaseClient.login(test_email, test_password)
+	SupabaseClient.login(test_email, test_password)
+	var login_result = await _await_auth_signal()
 
-	if result.success and SupabaseClient.is_authenticated():
+	if login_result.success and SupabaseClient.is_authenticated():
 		return _record_test(test_name, true, "Login successful")
 	else:
-		return _record_test(test_name, false, "Login failed: " + result.error)
+		return _record_test(test_name, false, "Login failed: " + login_result.error)
 
 func test_login_invalid_password() -> bool:
 	"""Test login with wrong password"""
@@ -149,14 +262,18 @@ func test_login_invalid_password() -> bool:
 		return _record_test(test_name, false, "SupabaseClient not available")
 
 	# Register
-	await SupabaseClient.register(test_email, test_password, test_username)
-	await SupabaseClient.logout()
+	SupabaseClient.register(test_email, test_password, test_username)
+	await _await_auth_signal()
+	
+	SupabaseClient.logout()
+	await _await_auth_signal()
 
 	# Login with wrong password
-	var result = await SupabaseClient.login(test_email, wrong_password)
+	SupabaseClient.login(test_email, wrong_password)
+	var result = await _await_auth_signal()
 
 	# Should fail
-	if not result.success and ("invalid" in result.error.to_lower() or "password" in result.error.to_lower()):
+	if result.error != "" and ("invalid" in result.error.to_lower() or "password" in result.error.to_lower()):
 		return _record_test(test_name, true, "Correctly rejected invalid password")
 	else:
 		return _record_test(test_name, false, "Should reject invalid password")
@@ -172,10 +289,11 @@ func test_login_nonexistent_user() -> bool:
 	if not SupabaseClient:
 		return _record_test(test_name, false, "SupabaseClient not available")
 
-	var result = await SupabaseClient.login(fake_email, test_password)
+	SupabaseClient.login(fake_email, test_password)
+	var result = await _await_auth_signal()
 
 	# Should fail
-	if not result.success:
+	if result.error != "":
 		return _record_test(test_name, true, "Correctly rejected nonexistent user")
 	else:
 		return _record_test(test_name, false, "Should reject nonexistent user")
@@ -197,13 +315,15 @@ func test_logout() -> bool:
 	var test_password = "SecurePassword123!@#"
 	var test_username = "logout_user_%d" % Time.get_unix_time_from_system()
 
-	await SupabaseClient.register(test_email, test_password, test_username)
+	SupabaseClient.register(test_email, test_password, test_username)
+	await _await_auth_signal()
 
 	if not SupabaseClient.is_authenticated():
 		return _record_test(test_name, false, "Failed to authenticate before logout test")
 
 	# Logout
-	var result = await SupabaseClient.logout()
+	SupabaseClient.logout()
+	var result = await _await_auth_signal()
 
 	if result.success and not SupabaseClient.is_authenticated():
 		return _record_test(test_name, true, "Logout successful, session cleared")
@@ -223,7 +343,8 @@ func test_token_refresh() -> bool:
 	var test_password = "SecurePassword123!@#"
 	var test_username = "refresh_user_%d" % Time.get_unix_time_from_system()
 
-	await SupabaseClient.register(test_email, test_password, test_username)
+	SupabaseClient.register(test_email, test_password, test_username)
+	await _await_auth_signal()
 
 	if not SupabaseClient.is_authenticated():
 		return _record_test(test_name, false, "Not authenticated before refresh test")
@@ -232,7 +353,8 @@ func test_token_refresh() -> bool:
 	var old_token = SupabaseClient.get_access_token()
 
 	# Trigger refresh (this would normally happen automatically)
-	var result = await SupabaseClient.refresh_session()
+	SupabaseClient.refresh_session()
+	var result = await _await_auth_signal()
 
 	if result.success:
 		var new_token = SupabaseClient.get_access_token()
@@ -259,7 +381,8 @@ func test_session_persistence() -> bool:
 	var test_password = "SecurePassword123!@#"
 	var test_username = "persist_user_%d" % Time.get_unix_time_from_system()
 
-	await SupabaseClient.register(test_email, test_password, test_username)
+	SupabaseClient.register(test_email, test_password, test_username)
+	await _await_auth_signal()
 
 	if SupabaseClient.is_authenticated():
 		# Check if tokens are stored (basic check)

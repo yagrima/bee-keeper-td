@@ -56,7 +56,8 @@ var stun_duration: float = 0.0
 
 # Components
 @onready var visual: Node2D
-@onready var health_bar: ProgressBar
+@onready var health_bar_bg: ColorRect
+@onready var health_bar_fill: ColorRect
 
 func _ready():
 	current_health = max_health
@@ -88,82 +89,44 @@ func setup_collision():
 	collision_mask = 1   # Can be detected by towers
 
 func setup_health_bar():
-	health_bar = ProgressBar.new()
-	# Start with vertical orientation (default)
-	health_bar.size = Vector2(3, 12)  # 3 pixels wide, 12 pixels high
-	health_bar.position = Vector2(-1.5, 12)  # Position below enemy (centered for 3px width)
-	health_bar.max_value = max_health
-	health_bar.value = current_health
-	health_bar.show_percentage = false
-	health_bar.z_index = 10  # Ensure it's visible above other elements
-
-	# Style the health bar with more visible colors
-	var fill_style = StyleBoxFlat.new()
-	fill_style.bg_color = Color.LIME_GREEN  # Bright green for health
-	fill_style.border_width_left = 1
-	fill_style.border_width_right = 1
-	fill_style.border_width_top = 1
-	fill_style.border_width_bottom = 1
-	fill_style.border_color = Color.BLACK
-	health_bar.add_theme_stylebox_override("fill", fill_style)
-
-	var bg_style = StyleBoxFlat.new()
-	bg_style.bg_color = Color.DARK_RED  # Dark red background
-	bg_style.border_width_left = 1
-	bg_style.border_width_right = 1
-	bg_style.border_width_top = 1
-	bg_style.border_width_bottom = 1
-	bg_style.border_color = Color.BLACK
-	health_bar.add_theme_stylebox_override("background", bg_style)
-
-	add_child(health_bar)
+	# Create background (dark red)
+	health_bar_bg = ColorRect.new()
+	health_bar_bg.size = Vector2(14, 2)  # 14 pixels wide, 2 pixels high
+	health_bar_bg.position = Vector2(-7, 10)  # Centered below enemy
+	health_bar_bg.color = Color(0.3, 0.0, 0.0, 1.0)  # Dark red
+	health_bar_bg.z_index = 9
+	add_child(health_bar_bg)
+	
+	# Create fill (green, scales with health)
+	health_bar_fill = ColorRect.new()
+	health_bar_fill.size = Vector2(14, 2)  # Same size as background
+	health_bar_fill.position = Vector2(0, 0)  # Inside background
+	health_bar_fill.color = Color(0.0, 1.0, 0.0, 1.0)  # Bright green
+	health_bar_fill.z_index = 10
+	health_bar_bg.add_child(health_bar_fill)
+	
 	print("Health bar created for enemy with health: ", current_health, "/", max_health)
 
 func update_health_bar_orientation(direction: Vector2):
-	if not health_bar:
-		return
-	
-	# Determine if movement is primarily horizontal or vertical
-	var abs_x = abs(direction.x)
-	var abs_y = abs(direction.y)
-	
-	if abs_x > abs_y:
-		# Horizontal movement - make bar horizontal (wide)
-		health_bar.size = Vector2(12, 3)  # 12 pixels wide, 3 pixels high
-		health_bar.position = Vector2(-6, 12)  # Centered horizontally
-	else:
-		# Vertical movement - make bar vertical (tall)
-		health_bar.size = Vector2(3, 12)  # 3 pixels wide, 12 pixels high
-		
-		# Position based on vertical movement direction
-		if direction.y > 0:
-			# Moving down - position on left side
-			health_bar.position = Vector2(-8, 12)  # Left side
-		else:
-			# Moving up - position on right side
-			health_bar.position = Vector2(5, 12)  # Right side
+	# Health bar is now simple ColorRects - no orientation changes needed
+	pass
 
 func update_health_bar_color():
-	if not health_bar:
+	if not health_bar_fill:
 		return
 
 	var health_percentage = current_health / max_health
-	var fill_style = StyleBoxFlat.new()
 
-	# Change color based on health percentage
+	# Update fill color based on health percentage
 	if health_percentage > 0.66:
-		fill_style.bg_color = Color.LIME_GREEN  # High health - green
+		health_bar_fill.color = Color(0.0, 1.0, 0.0, 1.0)  # Green
 	elif health_percentage > 0.33:
-		fill_style.bg_color = Color.YELLOW  # Medium health - yellow
+		health_bar_fill.color = Color(1.0, 1.0, 0.0, 1.0)  # Yellow
 	else:
-		fill_style.bg_color = Color.RED  # Low health - red
-
-	fill_style.border_width_left = 1
-	fill_style.border_width_right = 1
-	fill_style.border_width_top = 1
-	fill_style.border_width_bottom = 1
-	fill_style.border_color = Color.BLACK
-	health_bar.add_theme_stylebox_override("fill", fill_style)
+		health_bar_fill.color = Color(1.0, 0.0, 0.0, 1.0)  # Red
+	
+	# Scale fill width based on health percentage
+	health_bar_fill.size.x = 14 * health_percentage
 
 func get_enemy_color() -> Color:
 	match enemy_type:
@@ -282,7 +245,6 @@ func take_damage(damage: float, damage_type: String = "physical"):
 	print("=== END DAMAGE DEBUG ===")
 
 	# Update health bar
-	health_bar.value = current_health
 	update_health_bar_color()
 
 	# Emit damage signal

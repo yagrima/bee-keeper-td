@@ -29,16 +29,30 @@ func _init(p_td_scene: Node2D):
 func update_ui():
 	honey_label.text = "Honey: " + str(GameManager.get_resource("honey"))
 	health_label.text = "Health: " + str(td_scene.player_health)
-	wave_label.text = "Wave: " + str(td_scene.current_wave)
+	
+	# Show current wave or "Ready" if no wave started yet
+	if td_scene.current_wave == 0:
+		wave_label.text = "Wave: -"
+	else:
+		wave_label.text = "Wave: " + str(td_scene.current_wave)
 
 	# Update wave composition display
 	if wave_composition_label and td_scene.wave_manager:
-		var composition = td_scene.wave_manager.get_wave_composition(td_scene.current_wave)
-		var scaling_info = td_scene.wave_manager.get_wave_scaling_info()
+		# Show next wave if current wave is 0 or wave is not active
+		var wave_to_show = td_scene.current_wave if td_scene.current_wave > 0 else 1
+		if not td_scene.wave_manager.is_wave_active and td_scene.current_wave > 0:
+			wave_to_show = td_scene.current_wave + 1
+		
+		var composition = td_scene.wave_manager.get_wave_composition(wave_to_show)
+		print("📊 update_wave_info: current_wave=%d, wave_to_show=%d, composition='%s'" % [td_scene.current_wave, wave_to_show, composition])
+		
 		if composition != "":
-			wave_composition_label.text = "Wave " + str(td_scene.current_wave) + ": " + composition + " (" + scaling_info + ")"
+			var prefix = "Next: " if not td_scene.wave_manager.is_wave_active else ""
+			wave_composition_label.text = prefix + "Wave " + str(wave_to_show) + ": " + composition
+			print("✅ Wave composition label updated: '%s'" % wave_composition_label.text)
 		else:
-			wave_composition_label.text = ""
+			wave_composition_label.text = "All waves completed!"
+			print("⚠️ No more waves")
 
 func show_insufficient_honey_dialog(required_honey: int, current_honey: int):
 	"""Show dialog when player doesn't have enough honey"""
@@ -288,39 +302,43 @@ func cleanup_game_over_screen():
 		print("Game over overlay cleaned up")
 
 func setup_wave_composition_ui():
-	# Create wave composition label and position it to avoid overlap
+	# Create wave composition label in the WaveInfoPanel
 	wave_composition_label = Label.new()
 	wave_composition_label.name = "WaveCompositionLabel"
 
-	# Position it below the resource display area with proper spacing
-	wave_composition_label.position = Vector2(20, 70)  # Positioned below resource display
-	wave_composition_label.add_theme_font_size_override("font_size", 13)  # Smaller font for better fit
-	wave_composition_label.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))  # Slightly lighter
-	wave_composition_label.text = ""
+	# Style for panel display (left side)
+	wave_composition_label.add_theme_font_size_override("font_size", 16)
+	wave_composition_label.add_theme_color_override("font_color", Color(1, 0.9, 0.7, 1))  # Light beige (button text color)
+	wave_composition_label.text = "Press SPACE to start first wave"
 	wave_composition_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	wave_composition_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	wave_composition_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	wave_composition_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
-	# Add to UI layer
-	var ui_canvas = td_scene.get_node("UI")
-	ui_canvas.add_child(wave_composition_label)
+	# Add to WaveInfoContainer in the panel
+	var wave_info_container = td_scene.get_node("UI/WaveInfoPanel/WaveInfoContainer")
+	wave_info_container.add_child(wave_composition_label)
+	
+	print("✅ Wave composition label created in WaveInfoPanel")
 
 func setup_wave_countdown_ui():
 	"""Setup wave countdown timer display"""
-	# Create wave countdown label
+	# Create wave countdown label in the WaveInfoPanel
 	wave_countdown_label = Label.new()
 	wave_countdown_label.name = "WaveCountdownLabel"
 
-	# Position it below the wave composition label
-	wave_countdown_label.position = Vector2(20, 90)  # Below wave composition
-	wave_countdown_label.add_theme_font_size_override("font_size", 12)
-	wave_countdown_label.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))  # Same color as other labels
+	# Style for panel display (right side)
+	wave_countdown_label.add_theme_font_size_override("font_size", 14)
+	wave_countdown_label.add_theme_color_override("font_color", Color(1, 0.9, 0.7, 1))  # Light beige (button text color)
 	wave_countdown_label.text = ""
-	wave_countdown_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	wave_countdown_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	wave_countdown_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	wave_countdown_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	wave_countdown_label.custom_minimum_size = Vector2(200, 0)  # Fixed width for countdown
 
-	# Add to UI layer
-	var ui_canvas = td_scene.get_node("UI")
-	ui_canvas.add_child(wave_countdown_label)
+	# Add to WaveInfoContainer in the panel
+	var wave_info_container = td_scene.get_node("UI/WaveInfoPanel/WaveInfoContainer")
+	wave_info_container.add_child(wave_countdown_label)
+	
+	print("✅ Wave countdown label created in WaveInfoPanel")
 
 	# Create countdown timer
 	wave_countdown_timer = Timer.new()
@@ -330,18 +348,26 @@ func setup_wave_countdown_ui():
 	td_scene.add_child(wave_countdown_timer)
 
 func setup_individual_tower_buttons():
-	# Create four individual tower buttons
-	var button_parent = place_tower_button.get_parent()
-	var base_position = place_tower_button.position
-	var button_size = Vector2(130, 40)
-	var button_spacing = 140
+	# Create button styles
+	var button_style_normal = create_button_style(Color(0.6, 0.4, 0.2, 1))
+	var button_style_hover = create_button_style(Color(0.7, 0.5, 0.3, 1))
+	var button_style_pressed = create_button_style(Color(0.5, 0.35, 0.2, 1))
+	
+	# Get the Controls VBoxContainer as parent for tower buttons
+	var button_parent = td_scene.start_wave_button.get_parent()
+	var button_size = Vector2(200, 50)
+	var button_spacing = 60
+	
+	# First button position (after StartWaveButton which is 40px + 10px separation)
+	var base_position = Vector2(0, 50)
 
 	# Stinger Tower Button
 	stinger_button = Button.new()
 	stinger_button.name = "StingerButton"
 	stinger_button.text = "Q: Stinger (20)"
-	stinger_button.size = button_size
-	stinger_button.position = Vector2(base_position.x + button_spacing * 0, base_position.y)
+	stinger_button.custom_minimum_size = button_size
+	stinger_button.position = Vector2(base_position.x, base_position.y + button_spacing * 0)
+	apply_button_style(stinger_button, button_style_normal, button_style_hover, button_style_pressed)
 	stinger_button.pressed.connect(func(): td_scene._on_place_tower_pressed("stinger"))
 	button_parent.add_child(stinger_button)
 
@@ -349,8 +375,9 @@ func setup_individual_tower_buttons():
 	propolis_bomber_button = Button.new()
 	propolis_bomber_button.name = "PropolisBomberButton"
 	propolis_bomber_button.text = "W: Propolis (45)"
-	propolis_bomber_button.size = button_size
-	propolis_bomber_button.position = Vector2(base_position.x + button_spacing * 1, base_position.y)
+	propolis_bomber_button.custom_minimum_size = button_size
+	propolis_bomber_button.position = Vector2(base_position.x, base_position.y + button_spacing * 1)
+	apply_button_style(propolis_bomber_button, button_style_normal, button_style_hover, button_style_pressed)
 	propolis_bomber_button.pressed.connect(func(): td_scene._on_place_tower_pressed("propolis_bomber"))
 	button_parent.add_child(propolis_bomber_button)
 
@@ -358,8 +385,9 @@ func setup_individual_tower_buttons():
 	nectar_sprayer_button = Button.new()
 	nectar_sprayer_button.name = "NectarSprayerButton"
 	nectar_sprayer_button.text = "E: Nectar (30)"
-	nectar_sprayer_button.size = button_size
-	nectar_sprayer_button.position = Vector2(base_position.x + button_spacing * 2, base_position.y)
+	nectar_sprayer_button.custom_minimum_size = button_size
+	nectar_sprayer_button.position = Vector2(base_position.x, base_position.y + button_spacing * 2)
+	apply_button_style(nectar_sprayer_button, button_style_normal, button_style_hover, button_style_pressed)
 	nectar_sprayer_button.pressed.connect(func(): td_scene._on_place_tower_pressed("nectar_sprayer"))
 	button_parent.add_child(nectar_sprayer_button)
 
@@ -367,17 +395,37 @@ func setup_individual_tower_buttons():
 	lightning_flower_button = Button.new()
 	lightning_flower_button.name = "LightningFlowerButton"
 	lightning_flower_button.text = "R: Lightning (35)"
-	lightning_flower_button.size = button_size
-	lightning_flower_button.position = Vector2(base_position.x + button_spacing * 3, base_position.y)
+	lightning_flower_button.custom_minimum_size = button_size
+	lightning_flower_button.position = Vector2(base_position.x, base_position.y + button_spacing * 3)
+	apply_button_style(lightning_flower_button, button_style_normal, button_style_hover, button_style_pressed)
 	lightning_flower_button.pressed.connect(func(): td_scene._on_place_tower_pressed("lightning_flower"))
 	button_parent.add_child(lightning_flower_button)
 
-	# Hide the old place tower button
-	if place_tower_button:
-		place_tower_button.visible = false
-
 	# Update selection to show current tower
 	update_button_selection()
+
+func create_button_style(bg_color: Color) -> StyleBoxFlat:
+	"""Create a StyleBoxFlat for buttons"""
+	var style = StyleBoxFlat.new()
+	style.bg_color = bg_color
+	style.border_width_left = 2
+	style.border_width_top = 2
+	style.border_width_right = 2
+	style.border_width_bottom = 2
+	style.border_color = Color(0.4, 0.25, 0.15, 1)
+	style.corner_radius_top_left = 6
+	style.corner_radius_top_right = 6
+	style.corner_radius_bottom_right = 6
+	style.corner_radius_bottom_left = 6
+	return style
+
+func apply_button_style(button: Button, style_normal: StyleBoxFlat, style_hover: StyleBoxFlat, style_pressed: StyleBoxFlat):
+	"""Apply styles to a button"""
+	button.add_theme_stylebox_override("normal", style_normal)
+	button.add_theme_stylebox_override("hover", style_hover)
+	button.add_theme_stylebox_override("pressed", style_pressed)
+	button.add_theme_color_override("font_color", Color(1, 0.9, 0.7, 1))
+	button.add_theme_font_size_override("font_size", 16)
 
 func update_button_selection():
 	"""Update button visual state to show current selection"""
@@ -407,34 +455,60 @@ func update_button_selection():
 				lightning_flower_button.button_pressed = true
 
 func setup_speed_button():
-	# Create speed button next to the tower buttons
+	td_scene.add_debug_message("→ setup_speed_button() START")
+	
+	# Create button styles
+	var button_style_normal = create_button_style(Color(0.6, 0.4, 0.2, 1))
+	var button_style_hover = create_button_style(Color(0.7, 0.5, 0.3, 1))
+	var button_style_pressed = create_button_style(Color(0.5, 0.35, 0.2, 1))
+	
+	# Create speed button below the tower buttons
 	speed_button = Button.new()
 	speed_button.name = "SpeedButton"
-	speed_button.size = Vector2(150, 40)
+	speed_button.custom_minimum_size = Vector2(200, 50)
+	
+	td_scene.add_debug_message("→ Button created")
 
-	# Position it next to the lightning flower button
+	# Position it below the lightning flower button
 	var lightning_pos = lightning_flower_button.position
-	speed_button.position = Vector2(lightning_pos.x + 150, lightning_pos.y)
+	speed_button.position = Vector2(lightning_pos.x, lightning_pos.y + 60)
+
+	# Apply styles
+	apply_button_style(speed_button, button_style_normal, button_style_hover, button_style_pressed)
 
 	# Connect signal
-	if speed_button:
-		speed_button.pressed.connect(td_scene._on_speed_button_pressed)
+	speed_button.pressed.connect(td_scene._on_speed_button_pressed)
+	td_scene.add_debug_message("→ Signal connected")
 
 	# Add to same parent as tower buttons
 	lightning_flower_button.get_parent().add_child(speed_button)
+	td_scene.add_debug_message("→ Added to scene")
 
 	# Initialize button text
 	update_speed_button_text()
+	td_scene.add_debug_message("✅ setup_speed_button() DONE")
 
 func update_speed_button_text():
-	if speed_button:
-		match td_scene.speed_mode:
-			0:
-				speed_button.text = HotkeyManager.get_action_display_text("speed_toggle") + " (1x)"
-			1:
-				speed_button.text = HotkeyManager.get_action_display_text("speed_toggle") + " (2x)"
-			2:
-				speed_button.text = HotkeyManager.get_action_display_text("speed_toggle") + " (3x)"
+	td_scene.add_debug_message("→ update_speed_button_text() called")
+	
+	if not speed_button:
+		td_scene.add_debug_message("ERROR: speed_button NULL!")
+		return
+	
+	td_scene.add_debug_message("→ speed_mode: %d" % td_scene.speed_mode)
+	
+	var speed_text = ""
+	match td_scene.speed_mode:
+		0:
+			speed_text = HotkeyManager.get_action_display_text("speed_toggle") + " - 1x"
+		1:
+			speed_text = HotkeyManager.get_action_display_text("speed_toggle") + " - 2x"
+		2:
+			speed_text = HotkeyManager.get_action_display_text("speed_toggle") + " - 3x"
+	
+	td_scene.add_debug_message("→ new text: %s" % speed_text)
+	speed_button.text = speed_text
+	td_scene.add_debug_message("✅ Button updated!")
 
 func update_button_texts():
 	"""Update button texts with current hotkey assignments"""

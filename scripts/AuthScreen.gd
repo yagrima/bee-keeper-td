@@ -37,23 +37,22 @@ func _ready():
 	login_show_password.toggled.connect(_on_login_show_password_toggled)
 	register_show_password.toggled.connect(_on_register_show_password_toggled)
 
+	# Connect Enter key handling for login
+	login_email.text_submitted.connect(_on_login_email_submitted)
+	login_password.text_submitted.connect(_on_login_password_submitted)
+	
+	# Connect Enter key handling for register
+	register_username.text_submitted.connect(_on_register_username_submitted)
+	register_email.text_submitted.connect(_on_register_email_submitted)
+	register_password.text_submitted.connect(_on_register_password_submitted)
+	register_password_confirm.text_submitted.connect(_on_register_password_confirm_submitted)
+
 	# Connect password strength indicator
 	register_password.text_changed.connect(_on_password_changed)
 
 	# Connect SupabaseClient signals
 	SupabaseClient.auth_completed.connect(_on_auth_completed)
 	SupabaseClient.auth_error.connect(_on_auth_error)
-
-	# Connect Enter key for inputs
-	login_email.text_submitted.connect(_on_login_email_submitted)
-	login_password.text_submitted.connect(_on_login_password_submitted)
-	register_username.text_submitted.connect(_on_register_field_submitted)
-	register_email.text_submitted.connect(_on_register_field_submitted)
-	register_password.text_submitted.connect(_on_register_field_submitted)
-	register_password_confirm.text_submitted.connect(_on_register_field_submitted)
-
-	# Enable password manager support for web builds
-	_enable_password_manager_support()
 
 	# Clear error labels
 	login_error.text = ""
@@ -66,49 +65,6 @@ func _ready():
 	if SupabaseClient.is_authenticated():
 		print("✅ User already authenticated, going to main menu")
 		SceneManager.goto_main_menu()
-
-func _enable_password_manager_support():
-	"""Enable password manager autocomplete for web builds"""
-	if OS.has_feature("web"):
-		# Set autocomplete attributes via JavaScript for password managers
-		var js_code = """
-		// Wait for canvas to be ready
-		setTimeout(() => {
-			// Find all input elements in the canvas
-			const inputs = document.querySelectorAll('input');
-			inputs.forEach((input, index) => {
-				// Set form attributes for password manager
-				if (input.type === 'text' && index === 0) {
-					// Login email
-					input.setAttribute('autocomplete', 'username email');
-					input.setAttribute('name', 'email');
-				} else if (input.type === 'password' && index === 0) {
-					// Login password
-					input.setAttribute('autocomplete', 'current-password');
-					input.setAttribute('name', 'password');
-				} else if (input.type === 'text' && index === 1) {
-					// Register username
-					input.setAttribute('autocomplete', 'username');
-					input.setAttribute('name', 'username');
-				} else if (input.type === 'text' && index === 2) {
-					// Register email
-					input.setAttribute('autocomplete', 'email');
-					input.setAttribute('name', 'email');
-				} else if (input.type === 'password' && index === 1) {
-					// Register password
-					input.setAttribute('autocomplete', 'new-password');
-					input.setAttribute('name', 'new-password');
-				} else if (input.type === 'password' && index === 2) {
-					// Register password confirm
-					input.setAttribute('autocomplete', 'new-password');
-					input.setAttribute('name', 'new-password-confirm');
-				}
-			});
-			console.log('✅ Password manager support enabled');
-		}, 500);
-		"""
-		JavaScriptBridge.eval(js_code, true)
-		print("✅ Password manager support enabled for web build")
 
 # ============================================
 # LOGIN HANDLING
@@ -142,12 +98,16 @@ func _on_login_show_password_toggled(toggled: bool):
 	login_password.secret = not toggled
 
 func _on_login_email_submitted(_text: String):
-	"""Handle Enter key in email field - move to password"""
+	"""When Enter is pressed in email field, move to password field"""
 	login_password.grab_focus()
 
 func _on_login_password_submitted(_text: String):
-	"""Handle Enter key in password field - submit login"""
-	_on_login_pressed()
+	"""When Enter is pressed in password field, trigger login if fields are filled"""
+	var email = login_email.text.strip_edges()
+	var password = login_password.text
+	
+	if not email.is_empty() and not password.is_empty():
+		_on_login_pressed()
 
 # ============================================
 # REGISTER HANDLING
@@ -197,17 +157,26 @@ func _on_register_show_password_toggled(toggled: bool):
 	register_password.secret = not toggled
 	register_password_confirm.secret = not toggled
 
-func _on_register_field_submitted(_text: String):
-	"""Handle Enter key in register fields - try to submit or move to next field"""
-	# Check which field has focus and move to next, or submit if on last field
-	if register_username.has_focus():
-		register_email.grab_focus()
-	elif register_email.has_focus():
-		register_password.grab_focus()
-	elif register_password.has_focus():
-		register_password_confirm.grab_focus()
-	elif register_password_confirm.has_focus():
-		# Last field - attempt to submit
+func _on_register_username_submitted(_text: String):
+	"""When Enter is pressed in username field, move to email field"""
+	register_email.grab_focus()
+
+func _on_register_email_submitted(_text: String):
+	"""When Enter is pressed in email field, move to password field"""
+	register_password.grab_focus()
+
+func _on_register_password_submitted(_text: String):
+	"""When Enter is pressed in password field, move to confirm field"""
+	register_password_confirm.grab_focus()
+
+func _on_register_password_confirm_submitted(_text: String):
+	"""When Enter is pressed in confirm field, trigger registration if all fields are filled"""
+	var username = register_username.text.strip_edges()
+	var email = register_email.text.strip_edges()
+	var password = register_password.text
+	var password_confirm = register_password_confirm.text
+	
+	if not username.is_empty() and not email.is_empty() and not password.is_empty() and not password_confirm.is_empty():
 		_on_register_pressed()
 
 func _on_password_changed(new_text: String):
@@ -330,47 +299,9 @@ func _on_auth_error(error_message: String):
 
 	print("❌ Authentication error: %s" % error_message)
 
-	# Parse and improve error message
-	var user_friendly_error = _parse_error_message(error_message)
-
 	# Show error in both tabs (user might switch tabs)
-	login_error.text = user_friendly_error
-	register_error.text = user_friendly_error
-
-func _parse_error_message(error: String) -> String:
-	"""Convert technical error messages to user-friendly ones"""
-	var lower_error = error.to_lower()
-
-	# Email already exists
-	if "already" in lower_error or "exists" in lower_error or "duplicate" in lower_error:
-		return "❌ This email address is already registered. Please use a different email or try logging in."
-
-	# Invalid email format
-	if "invalid" in lower_error and "email" in lower_error:
-		return "❌ Invalid email format. Please enter a valid email address."
-
-	# Password too weak
-	if "password" in lower_error and ("weak" in lower_error or "short" in lower_error or "length" in lower_error):
-		return "❌ Password too weak. Please use at least 14 characters with uppercase, lowercase, numbers, and special characters."
-
-	# Invalid credentials (wrong password)
-	if "invalid" in lower_error and ("credential" in lower_error or "password" in lower_error):
-		return "❌ Invalid email or password. Please check your credentials and try again."
-
-	# User not found
-	if "not found" in lower_error or "user" in lower_error and "exist" in lower_error:
-		return "❌ No account found with this email. Please register first."
-
-	# Network errors
-	if "network" in lower_error or "connection" in lower_error or "timeout" in lower_error:
-		return "❌ Network error. Please check your internet connection and try again."
-
-	# Rate limiting
-	if "rate" in lower_error or "too many" in lower_error:
-		return "❌ Too many attempts. Please wait a moment and try again."
-
-	# Generic fallback with original error
-	return "❌ " + error
+	login_error.text = error_message
+	register_error.text = error_message
 
 # ============================================
 # UI HELPERS
