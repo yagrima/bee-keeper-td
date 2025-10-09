@@ -5,6 +5,7 @@ signal wave_started(wave_number)
 signal wave_completed(wave_number, enemies_killed)
 signal enemy_spawned(enemy)
 signal enemy_reached_end(enemy)
+signal enemy_died(enemy, rewards)
 signal all_waves_completed
 
 # Wave configuration
@@ -207,6 +208,9 @@ func _on_enemy_died(enemy: Enemy, rewards: Dictionary):
 	if enemy in enemies_in_wave:
 		enemies_in_wave.erase(enemy)
 		enemies_killed += 1
+	
+	# Emit signal to notify TowerDefense scene
+	enemy_died.emit(enemy, rewards)
 
 func _on_enemy_reached_end(enemy: Enemy, damage: int):
 	if enemy in enemies_in_wave:
