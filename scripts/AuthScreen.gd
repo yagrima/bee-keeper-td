@@ -37,15 +37,17 @@ func _ready():
 	login_show_password.toggled.connect(_on_login_show_password_toggled)
 	register_show_password.toggled.connect(_on_register_show_password_toggled)
 
+	# ⚠️ DISABLED: text_submitted signals cause input blocking in Web builds
+	# See: MD-Files/SOLUTION_WEB_BUILD_CLICKABILITY.md
 	# Connect Enter key handling for login
-	login_email.text_submitted.connect(_on_login_email_submitted)
-	login_password.text_submitted.connect(_on_login_password_submitted)
+	#login_email.text_submitted.connect(_on_login_email_submitted)
+	#login_password.text_submitted.connect(_on_login_password_submitted)
 	
 	# Connect Enter key handling for register
-	register_username.text_submitted.connect(_on_register_username_submitted)
-	register_email.text_submitted.connect(_on_register_email_submitted)
-	register_password.text_submitted.connect(_on_register_password_submitted)
-	register_password_confirm.text_submitted.connect(_on_register_password_confirm_submitted)
+	#register_username.text_submitted.connect(_on_register_username_submitted)
+	#register_email.text_submitted.connect(_on_register_email_submitted)
+	#register_password.text_submitted.connect(_on_register_password_submitted)
+	#register_password_confirm.text_submitted.connect(_on_register_password_confirm_submitted)
 
 	# Connect password strength indicator
 	register_password.text_changed.connect(_on_password_changed)
