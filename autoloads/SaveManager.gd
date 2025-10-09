@@ -223,6 +223,10 @@ func save_config():
 
 func load_config():
 	"""Load game configuration"""
+	if not file_handler:
+		print("⚠️ file_handler not initialized yet")
+		return
+	
 	var config_data = file_handler.load_config()
 	
 	if config_data.is_empty():

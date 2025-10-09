@@ -15,6 +15,11 @@ func _init(p_td_scene: Node2D):
 # WAVE EVENT HANDLERS
 # =============================================================================
 
+func update_wave_ui():
+	"""Update wave UI display"""
+	if td_scene.ui_manager and td_scene.ui_manager.wave_label:
+		td_scene.ui_manager.wave_label.text = str(td_scene.current_wave)
+
 func _on_wave_started(wave_number: int):
 	print("Wave ", wave_number, " started!")
 	td_scene.update_ui()  # Update UI to show current wave composition
@@ -24,7 +29,8 @@ func _on_wave_started(wave_number: int):
 
 func _on_wave_completed(wave_number: int, enemies_killed: int):
 	print("Wave ", wave_number, " completed! Killed ", enemies_killed, " enemies")
-	td_scene.current_wave += 1
+	# Note: current_wave is already correct (incremented when wave started)
+	# No need to increment it again here
 
 	# Auto-save after each wave
 	td_scene.auto_save_game("Wave %d completed" % wave_number)
@@ -111,6 +117,10 @@ func _on_auto_wave_timer_timeout():
 	if timer:
 		timer.queue_free()
 
+	# Increment wave BEFORE starting it (same as manual start)
+	td_scene.current_wave += 1
+	print("Auto-starting wave %d" % td_scene.current_wave)
+
 	# Start the next wave
 	td_scene.wave_manager.start_wave(td_scene.current_wave)
 
@@ -119,7 +129,8 @@ func _on_auto_wave_timer_timeout():
 
 func update_wave_countdown_ui(delay_seconds: float):
 	"""Update UI to show countdown for next wave"""
-	# This could be expanded to show a countdown timer in the UI
+	td_scene.countdown_seconds = delay_seconds
+	start_wave_countdown_display()
 	print("Next wave will start in %.1f seconds" % delay_seconds)
 
 func stop_auto_wave_timer():
@@ -138,17 +149,27 @@ func stop_auto_wave_timer():
 
 func start_wave_countdown_display():
 	"""Start the visual countdown display"""
-	if td_scene.wave_countdown_timer:
-		td_scene.wave_countdown_timer.start()
+	# Create timer if it doesn't exist
+	if not td_scene.has_node("WaveCountdownTimer"):
+		var timer = Timer.new()
+		timer.name = "WaveCountdownTimer"
+		timer.wait_time = 1.0
+		timer.timeout.connect(_on_wave_countdown_timer_timeout)
+		td_scene.add_child(timer)
+	
+	var timer = td_scene.get_node("WaveCountdownTimer")
+	if timer:
+		timer.start()
 		update_countdown_display()
 
 func stop_wave_countdown_display():
 	"""Stop the visual countdown display"""
-	if td_scene.wave_countdown_timer:
-		td_scene.wave_countdown_timer.stop()
+	var timer = td_scene.get_node_or_null("WaveCountdownTimer")
+	if timer:
+		timer.stop()
 
-	if td_scene.wave_countdown_label:
-		td_scene.wave_countdown_label.text = ""
+	if td_scene.ui_manager and td_scene.ui_manager.wave_countdown_label:
+		td_scene.ui_manager.wave_countdown_label.text = ""
 
 func _on_wave_countdown_timer_timeout():
 	"""Update countdown display every second"""
@@ -160,16 +181,16 @@ func _on_wave_countdown_timer_timeout():
 
 func update_countdown_display():
 	"""Update the countdown display text"""
-	if td_scene.wave_countdown_label and td_scene.countdown_seconds > 0:
+	if td_scene.ui_manager and td_scene.ui_manager.wave_countdown_label and td_scene.countdown_seconds > 0:
 		var minutes = int(td_scene.countdown_seconds) / 60
 		var seconds = int(td_scene.countdown_seconds) % 60
 
 		if minutes > 0:
-			td_scene.wave_countdown_label.text = "Next wave in %d:%02d" % [minutes, seconds]
+			td_scene.ui_manager.wave_countdown_label.text = "Next wave in %d:%02d" % [minutes, seconds]
 		else:
-			td_scene.wave_countdown_label.text = "Next wave in %d seconds" % [int(td_scene.countdown_seconds)]
-	elif td_scene.wave_countdown_label:
-		td_scene.wave_countdown_label.text = ""
+			td_scene.ui_manager.wave_countdown_label.text = "Next wave in %d seconds" % [int(td_scene.countdown_seconds)]
+	elif td_scene.ui_manager and td_scene.ui_manager.wave_countdown_label:
+		td_scene.ui_manager.wave_countdown_label.text = ""
 
 # =============================================================================
 # WAVE COMPOSITION TIMER
@@ -197,9 +218,9 @@ func stop_wave_composition_timer():
 
 func _on_wave_composition_timer_timeout():
 	"""Update wave composition display in real-time"""
-	if td_scene.wave_composition_label and td_scene.wave_manager and td_scene.wave_manager.is_wave_in_progress():
+	if td_scene.ui_manager and td_scene.ui_manager.wave_composition_label and td_scene.wave_manager and td_scene.wave_manager.is_wave_in_progress():
 		var composition = td_scene.wave_manager.get_wave_composition(td_scene.current_wave)
 		if composition != "":
-			td_scene.wave_composition_label.text = "Wave " + str(td_scene.current_wave) + ": " + composition
+			td_scene.ui_manager.wave_composition_label.text = "Wave " + str(td_scene.current_wave) + ": " + composition
 		else:
-			td_scene.wave_composition_label.text = ""
+			td_scene.ui_manager.wave_composition_label.text = ""

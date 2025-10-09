@@ -1,6 +1,42 @@
-[gd_scene load_steps=2 format=3 uid="uid://c3jb5muvf0hg8"]
+[gd_scene load_steps=5 format=3 uid="uid://c3jb5muvf0hg8"]
 
 [ext_resource type="Script" uid="uid://wu67h7wmjxm1" path="res://scripts/Main.gd" id="1_0x4d0"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.4, 0.25, 0.15, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.25, 0.15, 0.1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button"]
+bg_color = Color(0.6, 0.4, 0.2, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.4, 0.25, 0.15, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_hover"]
+bg_color = Color(0.7, 0.5, 0.3, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.5, 0.35, 0.2, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -11,38 +47,97 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_0x4d0")
 
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 0.75, 0, 1)
+
 [node name="UI" type="CanvasLayer" parent="."]
 
-[node name="MenuContainer" type="VBoxContainer" parent="UI"]
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -100.0
-offset_top = -75.0
-offset_right = 100.0
-offset_bottom = 75.0
+[node name="CenterContainer" type="CenterContainer" parent="UI"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Title" type="Label" parent="UI/MenuContainer"]
+[node name="Panel" type="Panel" parent="UI/CenterContainer"]
+custom_minimum_size = Vector2(400, 500)
 layout_mode = 2
-text = "Bee Keeper TD"
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="MenuContainer" type="VBoxContainer" parent="UI/CenterContainer/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+theme_override_constants/separation = 20
+
+[node name="Title" type="Label" parent="UI/CenterContainer/Panel/MenuContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.7, 1)
+theme_override_font_sizes/font_size = 42
+text = "BeeKeeperTD"
 horizontal_alignment = 1
 
-[node name="PlayButton" type="Button" parent="UI/MenuContainer"]
+[node name="Subtitle" type="Label" parent="UI/CenterContainer/Panel/MenuContainer"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.85, 0.65, 1)
+theme_override_font_sizes/font_size = 18
+text = "Main Menu"
+horizontal_alignment = 1
+
+[node name="Spacer1" type="Control" parent="UI/CenterContainer/Panel/MenuContainer"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+
+[node name="PlayButton" type="Button" parent="UI/CenterContainer/Panel/MenuContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.7, 1)
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 text = "Spielen"
 
-[node name="TDButton" type="Button" parent="UI/MenuContainer"]
+[node name="TDButton" type="Button" parent="UI/CenterContainer/Panel/MenuContainer"]
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.7, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 text = "Tower Defense (Direct)"
 
-[node name="SettlementButton" type="Button" parent="UI/MenuContainer"]
+[node name="SettlementButton" type="Button" parent="UI/CenterContainer/Panel/MenuContainer"]
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.7, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 text = "Settlement (Direct)"
 
-[node name="LogoutButton" type="Button" parent="UI/MenuContainer"]
+[node name="Spacer2" type="Control" parent="UI/CenterContainer/Panel/MenuContainer"]
+custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
-text = "👋 Logout"
+size_flags_vertical = 3
+
+[node name="LogoutButton" type="Button" parent="UI/CenterContainer/Panel/MenuContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.7, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+text = "Logout"

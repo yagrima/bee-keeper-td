@@ -1,9 +1,9 @@
 extends Control
 
-@onready var play_button = $UI/MenuContainer/PlayButton
-@onready var td_button = $UI/MenuContainer/TDButton
-@onready var settlement_button = $UI/MenuContainer/SettlementButton
-@onready var logout_button = $UI/MenuContainer/LogoutButton
+@onready var play_button = $UI/CenterContainer/Panel/MenuContainer/PlayButton
+@onready var td_button = $UI/CenterContainer/Panel/MenuContainer/TDButton
+@onready var settlement_button = $UI/CenterContainer/Panel/MenuContainer/SettlementButton
+@onready var logout_button = $UI/CenterContainer/Panel/MenuContainer/LogoutButton
 
 # =============================================================================
 # TESTING REMINDER SYSTEM

@@ -1,7 +1,67 @@
-[gd_scene load_steps=3 format=3 uid="uid://bxvf6q8r4n2hm"]
+[gd_scene load_steps=8 format=3 uid="uid://bxvf6q8r4n2hm"]
 
 [ext_resource type="Script" path="res://scripts/TowerDefense.gd" id="1_td_script"]
 [ext_resource type="Script" path="res://scripts/TDCamera.gd" id="2_camera_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_board_frame"]
+bg_color = Color(1, 0.75, 0, 0)
+border_width_left = 8
+border_width_top = 8
+border_width_right = 8
+border_width_bottom = 8
+border_color = Color(0.4, 0.25, 0.15, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ui_button"]
+bg_color = Color(0.6, 0.4, 0.2, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.4, 0.25, 0.15, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ui_button_hover"]
+bg_color = Color(0.7, 0.5, 0.3, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.5, 0.35, 0.2, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_info_panel"]
+bg_color = Color(0.4, 0.25, 0.15, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.25, 0.15, 0.1, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_resource_item"]
+bg_color = Color(0.6, 0.4, 0.2, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.4, 0.25, 0.15, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [node name="TowerDefense" type="Node2D"]
 script = ExtResource("1_td_script")
@@ -21,57 +81,185 @@ script = ExtResource("2_camera_script")
 
 [node name="UI" type="CanvasLayer" parent="."]
 
+[node name="Background" type="ColorRect" parent="UI"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 1280.0
+offset_bottom = 720.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 0.75, 0, 1)
+z_index = -1000
+
+[node name="BoardFrame" type="Panel" parent="UI"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -328.0
+offset_top = -248.0
+offset_right = 328.0
+offset_bottom = 248.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_board_frame")
+z_index = -900
+
+[node name="WaveInfoPanel" type="Panel" parent="UI"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -328.0
+offset_top = -290.0
+offset_right = 328.0
+offset_bottom = -255.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_ui_button")
+z_index = 100
+
+[node name="WaveInfoContainer" type="HBoxContainer" parent="UI/WaveInfoPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 8.0
+offset_right = -10.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+alignment = 0
+
 [node name="GameUI" type="Control" parent="UI"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 
-[node name="TopBar" type="HBoxContainer" parent="UI/GameUI"]
+[node name="TopBar" type="Panel" parent="UI/GameUI"]
 layout_mode = 1
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 10.0
-offset_top = -60.0
-offset_right = 400.0
+offset_top = -210.0
+offset_right = 210.0
 offset_bottom = -10.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_info_panel")
 
 [node name="ResourceDisplay" type="VBoxContainer" parent="UI/GameUI/TopBar"]
-layout_mode = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+theme_override_constants/separation = 10
 
-[node name="HoneyLabel" type="Label" parent="UI/GameUI/TopBar/ResourceDisplay"]
+[node name="HoneyPanel" type="Panel" parent="UI/GameUI/TopBar/ResourceDisplay"]
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_resource_item")
+
+[node name="HoneyLabel" type="Label" parent="UI/GameUI/TopBar/ResourceDisplay/HoneyPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.7, 1)
+theme_override_font_sizes/font_size = 16
 text = "Honey: 100"
+horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="HealthLabel" type="Label" parent="UI/GameUI/TopBar/ResourceDisplay"]
+[node name="HealthPanel" type="Panel" parent="UI/GameUI/TopBar/ResourceDisplay"]
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_resource_item")
+
+[node name="HealthLabel" type="Label" parent="UI/GameUI/TopBar/ResourceDisplay/HealthPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.7, 1)
+theme_override_font_sizes/font_size = 16
 text = "Health: 20"
+horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="WaveLabel" type="Label" parent="UI/GameUI/TopBar/ResourceDisplay"]
+[node name="WavePanel" type="Panel" parent="UI/GameUI/TopBar/ResourceDisplay"]
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
-text = "Wave: 1"
+theme_override_styles/panel = SubResource("StyleBoxFlat_resource_item")
 
-[node name="Controls" type="VBoxContainer" parent="UI/GameUI"]
+[node name="WaveLabel" type="Label" parent="UI/GameUI/TopBar/ResourceDisplay/WavePanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.7, 1)
+theme_override_font_sizes/font_size = 16
+text = "Wave: 1"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BackButton" type="Button" parent="UI/GameUI/TopBar/ResourceDisplay"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.7, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_ui_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ui_button_hover")
+text = "Back to Menu"
+
+[node name="ControlsPanel" type="Panel" parent="UI/GameUI"]
 layout_mode = 1
 anchors_preset = 3
 anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -150.0
-offset_top = -150.0
+offset_left = -240.0
+offset_top = -370.0
 offset_right = -10.0
 offset_bottom = -10.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_info_panel")
 
-[node name="StartWaveButton" type="Button" parent="UI/GameUI/Controls"]
+[node name="Controls" type="VBoxContainer" parent="UI/GameUI/ControlsPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+theme_override_constants/separation = 10
+
+[node name="StartWaveButton" type="Button" parent="UI/GameUI/ControlsPanel/Controls"]
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.7, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_ui_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ui_button_hover")
 text = "Start Wave"
-
-[node name="PlaceTowerButton" type="Button" parent="UI/GameUI/Controls"]
-layout_mode = 2
-text = "Place Tower (T)"
-
-[node name="BackButton" type="Button" parent="UI/GameUI/Controls"]
-layout_mode = 2
-text = "Back to Menu"

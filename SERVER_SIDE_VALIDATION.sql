@@ -213,20 +213,20 @@ CREATE OR REPLACE FUNCTION validate_save_timestamp()
 RETURNS TRIGGER AS $$
 DECLARE
     save_timestamp BIGINT;
-    current_timestamp BIGINT;
+    current_ts BIGINT;
     max_future_seconds INTEGER := 300;  -- Allow 5 minutes clock skew
 BEGIN
     -- Get current Unix timestamp
-    current_timestamp := EXTRACT(EPOCH FROM NOW())::bigint;
+    current_ts := EXTRACT(EPOCH FROM NOW())::bigint;
     
     -- Check if timestamp exists
     IF (NEW.data ? 'timestamp') THEN
         save_timestamp := (NEW.data->>'timestamp')::bigint;
         
         -- Prevent saves from the future (beyond clock skew tolerance)
-        IF save_timestamp > (current_timestamp + max_future_seconds) THEN
+        IF save_timestamp > (current_ts + max_future_seconds) THEN
             RAISE EXCEPTION 'Save timestamp is in the future: % (current: %)', 
-                to_timestamp(save_timestamp), to_timestamp(current_timestamp);
+                to_timestamp(save_timestamp), to_timestamp(current_ts);
         END IF;
         
         -- Note: We don't prevent past timestamps as legitimate saves can be older

@@ -1,0 +1,116 @@
+# Netlify Configuration for BeeKeeperTD Web App
+# ✅ SECURITY FIX: Content Security Policy & Security Headers
+
+[build]
+  publish = "builds/web"
+  command = "echo 'Godot export should be done before deploy'"
+
+# ============================================
+# SECURITY HEADERS (✅ FIXED)
+# ============================================
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # Content Security Policy (CSP) - XSS Protection
+    # CRITICAL: Godot Web needs 'wasm-unsafe-eval' for WebAssembly!
+    Content-Security-Policy = """
+      default-src 'self';
+      script-src 'self' 'wasm-unsafe-eval';
+      connect-src 'self' https://*.supabase.co wss://*.supabase.co;
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data: https:;
+      font-src 'self';
+      frame-ancestors 'none';
+      base-uri 'self';
+      form-action 'self';
+      upgrade-insecure-requests;
+    """
+    
+    # Clickjacking Protection
+    X-Frame-Options = "DENY"
+    
+    # MIME-Type Sniffing Protection
+    X-Content-Type-Options = "nosniff"
+    
+    # XSS Filter (legacy, but still useful for older browsers)
+    X-XSS-Protection = "1; mode=block"
+    
+    # Referrer Policy (privacy)
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    
+    # HSTS (Force HTTPS)
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+    
+    # Permissions Policy (disable unnecessary features)
+    Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()"
+
+# ============================================
+# HTTPS REDIRECT
+# ============================================
+
+[[redirects]]
+  from = "http://*"
+  to = "https://:splat"
+  status = 301
+  force = true
+
+# ============================================
+# ENVIRONMENT VARIABLES (Set in Netlify Dashboard!)
+# ============================================
+
+# REQUIRED Environment Variables:
+# - SUPABASE_URL: Your Supabase project URL
+# - SUPABASE_ANON_KEY: Your Supabase anon/public key
+# - BKTD_HMAC_SECRET: Secret key for save data integrity (min 32 chars)
+#
+# How to set:
+# 1. Netlify Dashboard → Site Settings → Environment Variables
+# 2. Add each variable with production values
+# 3. For build-time injection, use netlify build plugins
+
+# ============================================
+# BUILD PLUGINS (Optional)
+# ============================================
+
+# Example: Inject environment variables into index.html at build time
+# [[plugins]]
+#   package = "@netlify/plugin-env-inject"
+#   [plugins.inputs]
+#     variables = ["SUPABASE_URL", "SUPABASE_ANON_KEY"]
+
+# ============================================
+# CACHE CONTROL
+# ============================================
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+  for = "/*.wasm"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+    Content-Type = "application/wasm"
+
+[[headers]]
+  for = "/*.pck"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# ============================================
+# CORS (If needed for API endpoints)
+# ============================================
+
+# [[headers]]
+#   for = "/api/*"
+#   [headers.values]
+#     Access-Control-Allow-Origin = "https://yourdomain.com"
+#     Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+#     Access-Control-Allow-Headers = "Content-Type, Authorization"

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Canvas Input Fix Test</title>
+</head>
+<body>
+    <h1>Canvas Input Fix</h1>
+    <p>Führe diesen Code in der Browser-Console aus um Maus-Input zu aktivieren:</p>
+    
+    <pre>
+// Option 1: Canvas transparent für UI-Elements machen
+const canvas = document.querySelector('canvas');
+if (canvas) {
+    console.log('Canvas found, current pointer-events:', canvas.style.pointerEvents);
+    
+    // Mache Canvas transparent für Maus-Events außer wenn direkt auf Game-Content geklickt wird
+    canvas.style.pointerEvents = 'none';
+    
+    console.log('Changed to:', canvas.style.pointerEvents);
+    console.log('✅ Canvas now ignores mouse events - UI should work');
+}
+
+// Option 2: Force focus weg vom Canvas
+document.body.click();
+console.log('Clicked body to remove canvas focus');
+
+// Option 3: Prüfe ob unsichtbare Overlays existieren
+const allElements = document.querySelectorAll('*');
+console.log('Total elements:', allElements.length);
+allElements.forEach(el => {
+    const style = window.getComputedStyle(el);
+    const zIndex = parseInt(style.zIndex);
+    if (zIndex > 1000) {
+        console.log('High z-index element:', el.tagName, zIndex, el);
+    }
+});
+    </pre>
+    
+    <button onclick="fixCanvas()">Fix Canvas Input</button>
+    
+    <script>
+function fixCanvas() {
+    const canvas = document.querySelector('canvas');
+    if (!canvas) {
+        alert('Canvas not found!');
+        return;
+    }
+    
+    console.log('Before fix:', {
+        pointerEvents: canvas.style.pointerEvents,
+        zIndex: canvas.style.zIndex,
+        position: canvas.style.position
+    });
+    
+    // Fix 1: Pointer events
+    canvas.style.pointerEvents = 'none';
+    
+    // Fix 2: Remove focus
+    if (document.activeElement === canvas) {
+        canvas.blur();
+        document.body.focus();
+    }
+    
+    console.log('After fix:', {
+        pointerEvents: canvas.style.pointerEvents,
+        activeElement: document.activeElement.tagName
+    });
+    
+    alert('Canvas fixed! Try clicking UI elements now.');
+}
+    </script>
+</body>
+</html>
