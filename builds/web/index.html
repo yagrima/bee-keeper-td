@@ -90,7 +90,7 @@ body {
 	z-index: 1;
 }
 		</style>
-		<link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
+<link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
 <link rel="apple-touch-icon" href="index.apple-touch-icon.png"/>
 <script>
 // BeeKeeperTD - Environment Variables for Web Build
@@ -111,28 +111,31 @@ if (window.location.hostname === 'localhost' || window.location.hostname === '12
 </script>
 	</head>
 	<body>
-		<canvas id="canvas">
+		<canvas id="canvas" tabindex="1">
 			Your browser does not support the canvas tag.
 		</canvas>
 
-		<noscript>
-			Your browser does not support JavaScript.
-		</noscript>
-
 		<div id="status">
-			<img id="status-splash" class="show-image--true fullsize--true use-filter--true" src="index.png" alt="">
-			<progress id="status-progress"></progress>
-			<div id="status-notice"></div>
+			<img id="status-splash" alt="" />
+			<progress id="status-progress" />
 		</div>
 
-		<script src="index.js"></script>
+		<div id="status-notice"></div>
+
+		<script src="$GODOT_BASENAME.js"></script>
 		<script>
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":309300,"index.wasm":38057390},"focusCanvas":false,"gdextensionLibs":[],"godotPoolSize":4};
+// ============================================================================
+// BeeKeeperTD - Custom Canvas Focus Handler for Web Build
+// ============================================================================
+console.log("🌐 [BeeKeeperTD] Custom HTML shell loaded");
+
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":314288,"index.wasm":38057390},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
 (function () {
-	const statusOverlay = document.getElementById('status');
+	const canvas = document.getElementById('canvas');
+	const statusSplash = document.getElementById('status-splash');
 	const statusProgress = document.getElementById('status-progress');
 	const statusNotice = document.getElementById('status-notice');
 
@@ -144,14 +147,10 @@ const engine = new Engine(GODOT_CONFIG);
 			return;
 		}
 		if (mode === 'hidden') {
-			statusOverlay.remove();
+			statusSplash.style.display = 'none';
+			statusProgress.style.display = 'none';
 			initializing = false;
-			return;
 		}
-		statusOverlay.style.visibility = 'visible';
-		statusProgress.style.display = mode === 'progress' ? 'block' : 'none';
-		statusNotice.style.display = mode === 'notice' ? 'block' : 'none';
-		statusMode = mode;
 	}
 
 	function setStatusNotice(text) {
@@ -159,10 +158,17 @@ const engine = new Engine(GODOT_CONFIG);
 			statusNotice.removeChild(statusNotice.lastChild);
 		}
 		const lines = text.split('\n');
-		lines.forEach((line) => {
+		lines.forEach((line, index) => {
 			statusNotice.appendChild(document.createTextNode(line));
-			statusNotice.appendChild(document.createElement('br'));
+			if (index < lines.length - 1) {
+				statusNotice.appendChild(document.createElement('br'));
+			}
 		});
+		if (text) {
+			statusNotice.style.display = 'block';
+		} else {
+			statusNotice.style.display = 'none';
+		}
 	}
 
 	function displayFailureNotice(err) {
@@ -172,10 +178,8 @@ const engine = new Engine(GODOT_CONFIG);
 		} else if (typeof err === 'string') {
 			setStatusNotice(err);
 		} else {
-			setStatusNotice('An unknown error occurred.');
+			setStatusNotice('An unknown error occurred');
 		}
-		setStatusMode('notice');
-		initializing = false;
 	}
 
 	const missing = Engine.getMissingFeatures({
@@ -183,52 +187,78 @@ const engine = new Engine(GODOT_CONFIG);
 	});
 
 	if (missing.length !== 0) {
-		if (GODOT_CONFIG['serviceWorker'] && GODOT_CONFIG['ensureCrossOriginIsolationHeaders'] && 'serviceWorker' in navigator) {
-			let serviceWorkerRegistrationPromise;
-			try {
-				serviceWorkerRegistrationPromise = navigator.serviceWorker.getRegistration();
-			} catch (err) {
-				serviceWorkerRegistrationPromise = Promise.reject(new Error('Service worker registration failed.'));
-			}
-			// There's a chance that installing the service worker would fix the issue
-			Promise.race([
-				serviceWorkerRegistrationPromise.then((registration) => {
-					if (registration != null) {
-						return Promise.reject(new Error('Service worker already exists.'));
-					}
-					return registration;
-				}).then(() => engine.installServiceWorker()),
-				// For some reason, `getRegistration()` can stall
-				new Promise((resolve) => {
-					setTimeout(() => resolve(), 2000);
-				}),
-			]).then(() => {
-				// Reload if there was no error.
-				window.location.reload();
-			}).catch((err) => {
-				console.error('Error while registering service worker:', err);
-			});
+		if (GODOT_CONFIG['serviceWorker'] && GODOT_CONFIG['ensureCrossOriginIsolationHeaders']) {
+			setStatusNotice('Error: Some of the following features required by the Godot project are not supported:\n' + missing.join('\n'));
 		} else {
-			// Display the message as usual
-			const missingMsg = 'Error\nThe following features required to run Godot projects on the Web are missing:\n';
-			displayFailureNotice(missingMsg + missing.join('\n'));
+			setStatusNotice('Error: Some of the following features required by the Godot project are not supported:\n' + missing.join('\n'));
 		}
-	} else {
-		setStatusMode('progress');
-		engine.startGame({
-			'onProgress': function (current, total) {
-				if (current > 0 && total > 0) {
-					statusProgress.value = current;
-					statusProgress.max = total;
-				} else {
-					statusProgress.removeAttribute('value');
-					statusProgress.removeAttribute('max');
-				}
-			},
-		}).then(() => {
-			setStatusMode('hidden');
-		}, displayFailureNotice);
+		return;
 	}
+
+	setStatusMode('indeterminate');
+	engine.startGame({
+		'onProgress': function (current, total) {
+			if (current > 0 && total > 0) {
+				statusProgress.value = current;
+				statusProgress.max = total;
+				setStatusMode('progress');
+			} else {
+				setStatusMode('indeterminate');
+			}
+		},
+	}).then(() => {
+		setStatusMode('hidden');
+		
+		// ====================================================================
+		// CANVAS AUTO-FOCUS FIX FOR BEEKEEPER TD
+		// ====================================================================
+		console.log("✅ [BeeKeeperTD] Game started, setting up canvas focus...");
+		
+		// Immediate focus
+		canvas.focus();
+		console.log("✅ [BeeKeeperTD] Canvas focused immediately");
+		
+		// Focus on any click (backup)
+		canvas.addEventListener('click', function() {
+			canvas.focus();
+			console.log("🖱️ [BeeKeeperTD] Canvas focused after click");
+		}, { once: false });
+		
+		// Focus on window load (backup)
+		window.addEventListener('load', function() {
+			setTimeout(function() {
+				canvas.focus();
+				console.log("✅ [BeeKeeperTD] Canvas focused after window load");
+			}, 100);
+		});
+		
+		// Focus on any key press (backup)
+		document.addEventListener('keydown', function(event) {
+			if (document.activeElement !== canvas) {
+				canvas.focus();
+				console.log("⌨️ [BeeKeeperTD] Canvas focused after keypress");
+			}
+		}, { once: false });
+		
+		// Periodic focus check (aggressive)
+		let focusCheckCount = 0;
+		const maxFocusChecks = 50; // 5 seconds
+		const focusCheckInterval = setInterval(function() {
+			if (document.activeElement !== canvas) {
+				canvas.focus();
+				console.log("🔄 [BeeKeeperTD] Canvas re-focused (check " + (focusCheckCount + 1) + ")");
+			}
+			focusCheckCount++;
+			if (focusCheckCount >= maxFocusChecks) {
+				clearInterval(focusCheckInterval);
+				console.log("✅ [BeeKeeperTD] Focus check completed");
+			}
+		}, 100); // Every 100ms for 5 seconds
+		
+		console.log("🎮 [BeeKeeperTD] Canvas focus handlers installed");
+		// ====================================================================
+		
+	}, displayFailureNotice);
 }());
 		</script>
 	</body>

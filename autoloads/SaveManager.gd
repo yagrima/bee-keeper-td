@@ -32,6 +32,9 @@ var auto_save_enabled: bool = true
 var auto_save_interval: float = 60.0
 var auto_save_timer: Timer
 
+# Cloud sync settings (Feature-Flag)
+var cloud_sync_enabled: bool = false  # Disabled by default until Supabase is configured
+
 func _ready():
 	# Initialize component systems
 	security = SaveSecurity.new()
@@ -87,10 +90,12 @@ func save_game(save_name: String = "main") -> bool:
 		print("❌ Failed to save game: ", save_name)
 		return false
 
-	# Sync to cloud if authenticated (async)
-	if SupabaseClient.is_authenticated():
+	# Sync to cloud if authenticated AND enabled (async)
+	if cloud_sync_enabled and SupabaseClient.is_authenticated():
 		print("☁️ Syncing to cloud...")
 		cloud_sync.save_to_cloud(save_data)  # Async, doesn't block
+	elif not cloud_sync_enabled:
+		print("ℹ️ Skipping cloud sync (feature disabled)")
 	else:
 		print("ℹ️ Skipping cloud sync (not authenticated)")
 
@@ -110,8 +115,8 @@ func load_game(save_name: String = "main") -> bool:
 	"""
 	print("📂 Loading game: ", save_name)
 
-	# Cloud-First: Try loading from cloud if authenticated
-	if SupabaseClient.is_authenticated():
+	# Cloud-First: Try loading from cloud if authenticated AND enabled
+	if cloud_sync_enabled and SupabaseClient.is_authenticated():
 		print("☁️ Attempting to load from cloud...")
 		var cloud_data = await cloud_sync.load_from_cloud()
 
@@ -311,5 +316,5 @@ func auto_sync_on_event(event_name: String):
 	file_handler.write_save_file("auto_save", save_data)
 	
 	# Then sync to cloud (async)
-	if SupabaseClient.is_authenticated():
+	if cloud_sync_enabled and SupabaseClient.is_authenticated():
 		cloud_sync.auto_sync_on_event(event_name, save_data)
