@@ -1,72 +1,6 @@
-[gd_scene load_steps=8 format=3 uid="uid://cltkuqe34l0bw"]
+[gd_scene load_steps=2 format=3 uid="uid://cltkuqe34l0bw"]
 
 [ext_resource type="Script" path="res://scripts/AuthScreen.gd" id="1_2r3h4"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
-bg_color = Color(0.4, 0.25, 0.15, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.25, 0.15, 0.1, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tab"]
-bg_color = Color(0.5, 0.35, 0.2, 1)
-content_margin_left = 60.0
-content_margin_top = 8.0
-content_margin_right = 60.0
-content_margin_bottom = 8.0
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tab_selected"]
-bg_color = Color(0.4, 0.25, 0.15, 1)
-content_margin_left = 60.0
-content_margin_top = 8.0
-content_margin_right = 60.0
-content_margin_bottom = 8.0
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_input"]
-bg_color = Color(0.95, 0.85, 0.65, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.6, 0.45, 0.25, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button"]
-bg_color = Color(0.6, 0.4, 0.2, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.4, 0.25, 0.15, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_hover"]
-bg_color = Color(0.7, 0.5, 0.3, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.5, 0.35, 0.2, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
 
 [node name="AuthScreen" type="Control"]
 layout_mode = 3
@@ -76,15 +10,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_2r3h4")
-
-[node name="Background" type="ColorRect" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(1, 0.75, 0, 1)
 
 [node name="CenterContainer" type="CenterContainer" parent="."]
 layout_mode = 1
@@ -96,215 +21,34 @@ grow_vertical = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer"]
 layout_mode = 2
-theme_override_constants/separation = 20
 
 [node name="Title" type="Label" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.25, 0.15, 0.1, 1)
-theme_override_colors/font_outline_color = Color(0.6, 0.4, 0.2, 1)
-theme_override_constants/outline_size = 3
-theme_override_font_sizes/font_size = 48
-text = "BeeKeeperTD"
+text = "BeeKeeperTD Login"
 horizontal_alignment = 1
 
-[node name="Subtitle" type="Label" parent="CenterContainer/VBoxContainer"]
+[node name="EmailLabel" type="Label" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.3, 0.2, 0.1, 1)
-theme_override_font_sizes/font_size = 20
-text = "Login or Register to Continue"
-horizontal_alignment = 1
-
-[node name="Spacer1" type="Control" parent="CenterContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 20)
-layout_mode = 2
-
-[node name="TabContainer" type="TabContainer" parent="CenterContainer/VBoxContainer"]
-custom_minimum_size = Vector2(500, 450)
-layout_mode = 2
-theme_override_colors/font_selected_color = Color(1, 0.9, 0.7, 1)
-theme_override_colors/font_unselected_color = Color(0.8, 0.7, 0.5, 1)
-theme_override_constants/side_margin = 20
-theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
-theme_override_styles/tab_selected = SubResource("StyleBoxFlat_tab_selected")
-theme_override_styles/tab_unselected = SubResource("StyleBoxFlat_tab")
-tab_alignment = 0
-
-[node name="Login" type="VBoxContainer" parent="CenterContainer/VBoxContainer/TabContainer"]
-layout_mode = 2
-theme_override_constants/separation = 15
-metadata/_tab_index = 0
-
-[node name="EmailLabel" type="Label" parent="CenterContainer/VBoxContainer/TabContainer/Login"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.85, 0.65, 1)
 text = "Email:"
 
-[node name="EmailInput" type="LineEdit" parent="CenterContainer/VBoxContainer/TabContainer/Login"]
-custom_minimum_size = Vector2(0, 40)
+[node name="EmailInput" type="LineEdit" parent="CenterContainer/VBoxContainer"]
+custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.2, 0.1, 0.05, 1)
-theme_override_styles/normal = SubResource("StyleBoxFlat_input")
 placeholder_text = "your@email.com"
 
-[node name="PasswordLabel" type="Label" parent="CenterContainer/VBoxContainer/TabContainer/Login"]
+[node name="PasswordLabel" type="Label" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.85, 0.65, 1)
 text = "Password:"
 
-[node name="PasswordInput" type="LineEdit" parent="CenterContainer/VBoxContainer/TabContainer/Login"]
-custom_minimum_size = Vector2(0, 40)
+[node name="PasswordInput" type="LineEdit" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.2, 0.1, 0.05, 1)
-theme_override_styles/normal = SubResource("StyleBoxFlat_input")
-placeholder_text = "Min 14 characters"
+placeholder_text = "password"
 secret = true
 
-[node name="ShowPasswordCheck" type="CheckButton" parent="CenterContainer/VBoxContainer/TabContainer/Login"]
+[node name="LoginButton" type="Button" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-text = "Show Password"
-
-[node name="Spacer" type="Control" parent="CenterContainer/VBoxContainer/TabContainer/Login"]
-custom_minimum_size = Vector2(0, 20)
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="LoginButton" type="Button" parent="CenterContainer/VBoxContainer/TabContainer/Login"]
-custom_minimum_size = Vector2(0, 50)
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.7, 1)
-theme_override_font_sizes/font_size = 20
-theme_override_styles/normal = SubResource("StyleBoxFlat_button")
-theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 text = "Login"
 
-[node name="ErrorLabel" type="Label" parent="CenterContainer/VBoxContainer/TabContainer/Login"]
+[node name="ErrorLabel" type="Label" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
-theme_override_font_sizes/font_size = 14
 horizontal_alignment = 1
-
-[node name="Register" type="VBoxContainer" parent="CenterContainer/VBoxContainer/TabContainer"]
-visible = false
-layout_mode = 2
-theme_override_constants/separation = 15
-metadata/_tab_index = 1
-
-[node name="UsernameLabel" type="Label" parent="CenterContainer/VBoxContainer/TabContainer/Register"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.85, 0.65, 1)
-text = "Username:"
-
-[node name="UsernameInput" type="LineEdit" parent="CenterContainer/VBoxContainer/TabContainer/Register"]
-custom_minimum_size = Vector2(0, 40)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.2, 0.1, 0.05, 1)
-theme_override_styles/normal = SubResource("StyleBoxFlat_input")
-placeholder_text = "3-20 characters"
-max_length = 20
-
-[node name="EmailLabel" type="Label" parent="CenterContainer/VBoxContainer/TabContainer/Register"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.85, 0.65, 1)
-text = "Email:"
-
-[node name="EmailInput" type="LineEdit" parent="CenterContainer/VBoxContainer/TabContainer/Register"]
-custom_minimum_size = Vector2(0, 40)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.2, 0.1, 0.05, 1)
-theme_override_styles/normal = SubResource("StyleBoxFlat_input")
-placeholder_text = "your@email.com"
-
-[node name="PasswordLabel" type="Label" parent="CenterContainer/VBoxContainer/TabContainer/Register"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.85, 0.65, 1)
-text = "Password:"
-
-[node name="PasswordInput" type="LineEdit" parent="CenterContainer/VBoxContainer/TabContainer/Register"]
-custom_minimum_size = Vector2(0, 40)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.2, 0.1, 0.05, 1)
-theme_override_styles/normal = SubResource("StyleBoxFlat_input")
-placeholder_text = "Min 14 chars (upper, lower, number, special)"
-secret = true
-
-[node name="PasswordStrength" type="ProgressBar" parent="CenterContainer/VBoxContainer/TabContainer/Register"]
-custom_minimum_size = Vector2(0, 10)
-layout_mode = 2
-max_value = 5.0
-show_percentage = false
-
-[node name="PasswordStrengthLabel" type="Label" parent="CenterContainer/VBoxContainer/TabContainer/Register"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.85, 0.65, 1)
-theme_override_font_sizes/font_size = 12
-text = "Password Strength: Weak"
-
-[node name="PasswordConfirmLabel" type="Label" parent="CenterContainer/VBoxContainer/TabContainer/Register"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.85, 0.65, 1)
-text = "Confirm Password:"
-
-[node name="PasswordConfirmInput" type="LineEdit" parent="CenterContainer/VBoxContainer/TabContainer/Register"]
-custom_minimum_size = Vector2(0, 40)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.2, 0.1, 0.05, 1)
-theme_override_styles/normal = SubResource("StyleBoxFlat_input")
-placeholder_text = "Re-enter password"
-secret = true
-
-[node name="ShowPasswordCheck" type="CheckButton" parent="CenterContainer/VBoxContainer/TabContainer/Register"]
-layout_mode = 2
-text = "Show Passwords"
-
-[node name="Spacer" type="Control" parent="CenterContainer/VBoxContainer/TabContainer/Register"]
-custom_minimum_size = Vector2(0, 10)
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="RegisterButton" type="Button" parent="CenterContainer/VBoxContainer/TabContainer/Register"]
-custom_minimum_size = Vector2(0, 50)
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.7, 1)
-theme_override_font_sizes/font_size = 20
-theme_override_styles/normal = SubResource("StyleBoxFlat_button")
-theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
-text = "Register"
-
-[node name="ErrorLabel" type="Label" parent="CenterContainer/VBoxContainer/TabContainer/Register"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
-theme_override_font_sizes/font_size = 14
-horizontal_alignment = 1
-
-[node name="LoadingPanel" type="Panel" parent="."]
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
-
-[node name="LoadingContainer" type="CenterContainer" parent="LoadingPanel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="VBoxContainer" type="VBoxContainer" parent="LoadingPanel/LoadingContainer"]
-layout_mode = 2
-theme_override_constants/separation = 20
-
-[node name="Label" type="Label" parent="LoadingPanel/LoadingContainer/VBoxContainer"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.7, 1)
-theme_override_font_sizes/font_size = 24
-text = "Authenticating..."
-horizontal_alignment = 1
-
-[node name="ProgressBar" type="ProgressBar" parent="LoadingPanel/LoadingContainer/VBoxContainer"]
-custom_minimum_size = Vector2(300, 30)
-layout_mode = 2
